@@ -5,8 +5,6 @@ import Modal from '../components/common/Modal';
 import SafeIcon from '../components/common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiPill, FiPlus, FiSearch, FiAlertTriangle, FiPackage, FiTrendingDown, FiClock } = FiIcons;
-
 const Pharmacy = () => {
   const [activeTab, setActiveTab] = useState('inventory');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -144,13 +142,13 @@ const Pharmacy = () => {
   ];
 
   const tabs = [
-    { id: 'inventory', label: 'Inventory', icon: FiPackage },
-    { id: 'prescriptions', label: 'Prescriptions', icon: FiPill },
-    { id: 'interactions', label: 'Drug Interactions', icon: FiAlertTriangle }
+    { id: 'inventory', label: 'Inventory', icon: FiIcons.FiPackage },
+    { id: 'prescriptions', label: 'Prescriptions', icon: FiIcons.FiFileText },
+    { id: 'interactions', label: 'Drug Interactions', icon: FiIcons.FiAlertTriangle }
   ];
 
-  const filteredMedications = medications.filter(med =>
-    med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredMedications = medications.filter(med => 
+    med.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     med.genericName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -213,7 +211,7 @@ const Pharmacy = () => {
           onClick={() => setShowAddModal(true)}
           className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
-          <SafeIcon icon={FiPlus} className="w-5 h-5" />
+          <SafeIcon icon={FiIcons.FiPlus} className="w-5 h-5" />
           <span>Add Medication</span>
         </button>
       </div>
@@ -227,7 +225,7 @@ const Pharmacy = () => {
               <p className="text-2xl font-bold text-gray-900">{medications.length}</p>
             </div>
             <div className="p-3 bg-primary-100 rounded-lg">
-              <SafeIcon icon={FiPackage} className="w-6 h-6 text-primary-600" />
+              <SafeIcon icon={FiIcons.FiPackage} className="w-6 h-6 text-primary-600" />
             </div>
           </div>
         </Card>
@@ -240,7 +238,7 @@ const Pharmacy = () => {
               </p>
             </div>
             <div className="p-3 bg-warning-100 rounded-lg">
-              <SafeIcon icon={FiTrendingDown} className="w-6 h-6 text-warning-600" />
+              <SafeIcon icon={FiIcons.FiTrendingDown} className="w-6 h-6 text-warning-600" />
             </div>
           </div>
         </Card>
@@ -253,7 +251,7 @@ const Pharmacy = () => {
               </p>
             </div>
             <div className="p-3 bg-success-100 rounded-lg">
-              <SafeIcon icon={FiClock} className="w-6 h-6 text-success-600" />
+              <SafeIcon icon={FiIcons.FiClock} className="w-6 h-6 text-success-600" />
             </div>
           </div>
         </Card>
@@ -264,7 +262,7 @@ const Pharmacy = () => {
               <p className="text-2xl font-bold text-danger-600">{interactions.length}</p>
             </div>
             <div className="p-3 bg-danger-100 rounded-lg">
-              <SafeIcon icon={FiAlertTriangle} className="w-6 h-6 text-danger-600" />
+              <SafeIcon icon={FiIcons.FiAlertTriangle} className="w-6 h-6 text-danger-600" />
             </div>
           </div>
         </Card>
@@ -297,7 +295,10 @@ const Pharmacy = () => {
             {/* Search */}
             <Card>
               <div className="relative">
-                <SafeIcon icon={FiSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <SafeIcon
+                  icon={FiIcons.FiSearch}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                />
                 <input
                   type="text"
                   placeholder="Search medications..."
@@ -336,18 +337,26 @@ const Pharmacy = () => {
                         <td className="py-3 px-4">{medication.dosage}</td>
                         <td className="py-3 px-4">{medication.form}</td>
                         <td className="py-3 px-4">
-                          <span className={`font-medium ${
-                            medication.quantity === 0 ? 'text-danger-600' :
-                            medication.quantity < 50 ? 'text-warning-600' :
-                            'text-success-600'
-                          }`}>
+                          <span
+                            className={`font-medium ${
+                              medication.quantity === 0
+                                ? 'text-danger-600'
+                                : medication.quantity < 50
+                                ? 'text-warning-600'
+                                : 'text-success-600'
+                            }`}
+                          >
                             {medication.quantity}
                           </span>
                         </td>
                         <td className="py-3 px-4">${medication.unitPrice}</td>
                         <td className="py-3 px-4">{medication.expiryDate}</td>
                         <td className="py-3 px-4">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(medication.status)}`}>
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                              medication.status
+                            )}`}
+                          >
                             {medication.status}
                           </span>
                         </td>
@@ -380,11 +389,14 @@ const Pharmacy = () => {
                       <h4 className="font-medium text-gray-900">{prescription.patientName}</h4>
                       <p className="text-sm text-gray-500">ID: {prescription.patientId}</p>
                     </div>
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(prescription.status)}`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                        prescription.status
+                      )}`}
+                    >
                       {prescription.status}
                     </span>
                   </div>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                     <div>
                       <p className="text-sm text-gray-600">Medication:</p>
@@ -403,12 +415,10 @@ const Pharmacy = () => {
                       <p className="font-medium">{prescription.prescribedBy}</p>
                     </div>
                   </div>
-                  
                   <div className="mb-3">
                     <p className="text-sm text-gray-600">Instructions:</p>
                     <p className="text-sm text-gray-800">{prescription.instructions}</p>
                   </div>
-                  
                   <div className="flex items-center justify-between pt-3 border-t">
                     <p className="text-sm text-gray-500">
                       Prescribed on {prescription.prescribedDate}
@@ -440,16 +450,18 @@ const Pharmacy = () => {
                         {interaction.medication1} + {interaction.medication2}
                       </p>
                     </div>
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(interaction.severity)}`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(
+                        interaction.severity
+                      )}`}
+                    >
                       {interaction.severity} Risk
                     </span>
                   </div>
-                  
                   <div className="mb-3">
                     <p className="text-sm text-gray-600">Description:</p>
                     <p className="text-sm text-gray-800">{interaction.description}</p>
                   </div>
-                  
                   <div className="p-3 bg-warning-50 rounded-lg">
                     <p className="text-sm font-medium text-warning-800">Recommendation:</p>
                     <p className="text-sm text-warning-700">{interaction.recommendation}</p>
@@ -477,7 +489,7 @@ const Pharmacy = () => {
               <input
                 type="text"
                 value={newMedication.name}
-                onChange={(e) => setNewMedication({...newMedication, name: e.target.value})}
+                onChange={(e) => setNewMedication({ ...newMedication, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
@@ -489,7 +501,9 @@ const Pharmacy = () => {
               <input
                 type="text"
                 value={newMedication.genericName}
-                onChange={(e) => setNewMedication({...newMedication, genericName: e.target.value})}
+                onChange={(e) =>
+                  setNewMedication({ ...newMedication, genericName: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
@@ -501,7 +515,7 @@ const Pharmacy = () => {
               <input
                 type="text"
                 value={newMedication.dosage}
-                onChange={(e) => setNewMedication({...newMedication, dosage: e.target.value})}
+                onChange={(e) => setNewMedication({ ...newMedication, dosage: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="e.g., 10mg"
                 required
@@ -513,7 +527,7 @@ const Pharmacy = () => {
               </label>
               <select
                 value={newMedication.form}
-                onChange={(e) => setNewMedication({...newMedication, form: e.target.value})}
+                onChange={(e) => setNewMedication({ ...newMedication, form: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               >
@@ -533,7 +547,9 @@ const Pharmacy = () => {
               <input
                 type="text"
                 value={newMedication.manufacturer}
-                onChange={(e) => setNewMedication({...newMedication, manufacturer: e.target.value})}
+                onChange={(e) =>
+                  setNewMedication({ ...newMedication, manufacturer: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
@@ -544,7 +560,7 @@ const Pharmacy = () => {
               <input
                 type="number"
                 value={newMedication.quantity}
-                onChange={(e) => setNewMedication({...newMedication, quantity: e.target.value})}
+                onChange={(e) => setNewMedication({ ...newMedication, quantity: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
@@ -557,7 +573,7 @@ const Pharmacy = () => {
                 type="number"
                 step="0.01"
                 value={newMedication.unitPrice}
-                onChange={(e) => setNewMedication({...newMedication, unitPrice: e.target.value})}
+                onChange={(e) => setNewMedication({ ...newMedication, unitPrice: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
@@ -569,7 +585,7 @@ const Pharmacy = () => {
               <input
                 type="date"
                 value={newMedication.expiryDate}
-                onChange={(e) => setNewMedication({...newMedication, expiryDate: e.target.value})}
+                onChange={(e) => setNewMedication({ ...newMedication, expiryDate: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
@@ -581,7 +597,9 @@ const Pharmacy = () => {
               <input
                 type="text"
                 value={newMedication.batchNumber}
-                onChange={(e) => setNewMedication({...newMedication, batchNumber: e.target.value})}
+                onChange={(e) =>
+                  setNewMedication({ ...newMedication, batchNumber: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
@@ -592,12 +610,11 @@ const Pharmacy = () => {
               <input
                 type="text"
                 value={newMedication.supplier}
-                onChange={(e) => setNewMedication({...newMedication, supplier: e.target.value})}
+                onChange={(e) => setNewMedication({ ...newMedication, supplier: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
           </div>
-
           <div className="flex items-center justify-end space-x-3 pt-4 border-t">
             <button
               type="button"

@@ -1,183 +1,128 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import supabase from '../lib/supabase'
 
-const AuthContext = createContext();
+const AuthContext = createContext()
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext)
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
-};
+  return context
+}
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [selectedOrganization, setSelectedOrganization] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [organizations, setOrganizations] = useState([]);
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate authentication check
-    const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user_data');
-    const lastOrg = localStorage.getItem('selected_organization');
-    
-    if (token && userData) {
+    const initializeAuth = async () => {
       try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        // Load user's organizations
-        fetchUserOrganizations(parsedUser.id);
-        // Restore last selected organization if valid
-        if (lastOrg) {
-          const org = JSON.parse(lastOrg);
-          setSelectedOrganization(org);
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.email,
+            role: 'Administrator',
+            department: 'Administration', 
+            tenantId: 'gznfjkvpdomkxkdunmma', // Multi-tenant ID
+            organizationId: 'gznfjkvpdomkxkdunmma',
+            isAdmin: true
+          })
         }
       } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-        localStorage.removeItem('selected_organization');
+        console.error('Auth initialization error:', error)
+      } finally {
+        setLoading(false)
       }
     }
-    
-    setLoading(false);
-  }, []);
 
-  const fetchUserOrganizations = async (userId) => {
-    // Simulate API call to fetch user's organizations
-    const mockOrganizations = [
-      {
-        id: 'org1',
-        name: 'City General Hospital',
-        tenantId: 'tenant1',
-        type: 'hospital',
-        departments: ['Cardiology', 'Neurology', 'Emergency'],
-        roles: [
-          { id: 'doctor', name: 'Doctor', permissions: ['patients:read', 'patients:write'] },
-          { id: 'nurse', name: 'Nurse', permissions: ['patients:read', 'vitals:write'] }
-        ],
-        teams: [
-          { id: 'cardio-team', name: 'Cardiology Team', department: 'Cardiology' },
-          { id: 'neuro-team', name: 'Neurology Team', department: 'Neurology' }
-        ]
-      },
-      {
-        id: 'org2',
-        name: 'Metro Health Center',
-        tenantId: 'tenant1',
-        type: 'clinic',
-        departments: ['Primary Care', 'Pediatrics'],
-        roles: [
-          { id: 'doctor', name: 'Doctor', permissions: ['patients:read', 'patients:write'] },
-          { id: 'nurse', name: 'Nurse', permissions: ['patients:read', 'vitals:write'] }
-        ],
-        teams: [
-          { id: 'primary-team', name: 'Primary Care Team', department: 'Primary Care' },
-          { id: 'peds-team', name: 'Pediatrics Team', department: 'Pediatrics' }
-        ]
+    initializeAuth()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.email,
+            role: 'Administrator',
+            department: 'Administration',
+            tenantId: 'gznfjkvpdomkxkdunmma',
+            organizationId: 'gznfjkvpdomkxkdunmma', 
+            isAdmin: true
+          })
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+        }
       }
-    ];
+    )
 
-    setOrganizations(mockOrganizations);
-    
-    // If no organization is selected and user has organizations, select the first one
-    if (!selectedOrganization && mockOrganizations.length > 0) {
-      handleOrganizationSelect(mockOrganizations[0]);
-    }
-  };
+    return () => subscription.unsubscribe()
+  }, [])
 
   const login = async (credentials) => {
-    setLoading(true);
     try {
-      // Simulate API call for authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true)
       
-      // Mock admin user with full access
-      const mockUser = {
-        id: '1',
-        name: 'System Administrator',
-        email: credentials.email,
-        isAdmin: true,
-        globalPermissions: ['admin:full'],
-        organizationRoles: {
-          'org1': {
-            roles: ['admin'],
-            departments: ['all'],
-            teams: ['all']
-          },
-          'org2': {
-            roles: ['admin'],
-            departments: ['all'],
-            teams: ['all']
-          }
+      // For demo purposes, allow mock login
+      if (credentials.email === 'admin@medlinkx.com' && credentials.password === 'admin123') {
+        const mockUser = {
+          id: '1',
+          name: 'System Administrator',
+          email: 'admin@medlinkx.com',
+          role: 'Administrator',
+          department: 'Administration',
+          tenantId: 'gznfjkvpdomkxkdunmma',
+          organizationId: 'gznfjkvpdomkxkdunmma',
+          isAdmin: true
         }
-      };
+        setUser(mockUser)
+        return { success: true }
+      }
 
-      localStorage.setItem('auth_token', 'mock-token');
-      localStorage.setItem('user_data', JSON.stringify(mockUser));
-      setUser(mockUser);
-      
-      // Fetch organizations after successful login
-      await fetchUserOrganizations(mockUser.id);
-      
-      return { success: true };
+      // Try actual Supabase authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true }
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: error.message }
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleOrganizationSelect = (organization) => {
-    setSelectedOrganization(organization);
-    localStorage.setItem('selected_organization', JSON.stringify(organization));
-  };
-
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    localStorage.removeItem('selected_organization');
-    setUser(null);
-    setSelectedOrganization(null);
-    setOrganizations([]);
-  };
-
-  const hasPermission = (permission) => {
-    if (!user || !selectedOrganization) return false;
-
-    // Admin has all permissions
-    if (user.isAdmin || user.globalPermissions?.includes('admin:full')) {
-      return true;
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+    } catch (error) {
+      console.error('Logout error:', error)
+      setUser(null)
     }
-
-    // Check organization-specific roles and permissions
-    const orgRoles = user.organizationRoles[selectedOrganization.id];
-    if (!orgRoles) return false;
-
-    // Get permissions for all roles in current organization
-    const rolePermissions = orgRoles.roles.flatMap(roleId => {
-      const role = selectedOrganization.roles.find(r => r.id === roleId);
-      return role?.permissions || [];
-    });
-
-    return rolePermissions.includes(permission);
-  };
+  }
 
   const value = {
     user,
     login,
     logout,
     loading,
-    hasPermission,
-    organizations,
-    selectedOrganization,
-    handleOrganizationSelect
-  };
+  }
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}

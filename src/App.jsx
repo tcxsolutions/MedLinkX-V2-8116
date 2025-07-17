@@ -1,106 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import Sidebar from './components/layout/Sidebar';
-import Header from './components/layout/Header';
-import OrganizationSelector from './components/OrganizationSelector';
-import Dashboard from './pages/Dashboard';
-import Patients from './pages/Patients';
-import PatientDetails from './pages/PatientDetails';
-import Appointments from './pages/Appointments';
-import Pharmacy from './pages/Pharmacy';
-import Billing from './pages/Billing';
-import Inventory from './pages/Inventory';
-import Reports from './pages/Reports';
-import UserManagement from './pages/UserManagement';
-import Login from './pages/Login';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { TenantProvider } from './contexts/TenantContext';
-import LoadingSpinner from './components/common/LoadingSpinner';
-import './App.css';
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { TenantProvider } from './contexts/TenantContext'
+import { OrganizationProvider } from './contexts/OrganizationContext'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import Patients from './pages/Patients'
+import PatientDetails from './pages/PatientDetails'
+import Appointments from './pages/Appointments'
+import Billing from './pages/Billing'
+import Inventory from './pages/Inventory'
+import Pharmacy from './pages/Pharmacy'
+import Reports from './pages/Reports'
+import UserManagement from './pages/UserManagement'
+import DataImportExport from './components/dataManagement/DataImportExport'
+import OrganizationSettings from './components/organization/OrganizationSettings'
+import Header from './components/layout/Header'
+import Sidebar from './components/layout/Sidebar'
+import { useState } from 'react'
+import './App.css'
 
-function AppContent() {
-  const { user, loading, selectedOrganization } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Set sidebar to open by default
-
-  // Handle sidebar visibility on resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true); // Always show on large screens
-      }
-    };
-
-    // Set initial state based on screen size
-    handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <LoadingSpinner size="md" />
-          </div>
-          <p className="text-gray-600">Loading MedLinkX...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Login />;
-  }
+const AppLayout = ({ children }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* Desktop Sidebar - Always visible */}
+      <div className="hidden lg:block">
+        <Sidebar isOpen={true} onClose={() => {}} />
+      </div>
+      
+      {/* Mobile Sidebar - Overlay */}
+      <div className="lg:hidden">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </div>
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        
-        {/* Organization Selector */}
-        {!selectedOrganization && <OrganizationSelector />}
-        
-        {/* Main Content - Only show if organization is selected */}
-        {selectedOrganization && (
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-            <AnimatePresence mode="wait">
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/patients" element={<Patients />} />
-                <Route path="/patients/:id" element={<PatientDetails />} />
-                <Route path="/appointments" element={<Appointments />} />
-                <Route path="/pharmacy" element={<Pharmacy />} />
-                <Route path="/billing" element={<Billing />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/users" element={<UserManagement />} />
-              </Routes>
-            </AnimatePresence>
-          </main>
-        )}
+        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+          {children}
+        </main>
       </div>
     </div>
-  );
+  )
+}
+
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />
+  }
+
+  return (
+    <TenantProvider>
+      <OrganizationProvider>
+        <AppLayout>{children}</AppLayout>
+      </OrganizationProvider>
+    </TenantProvider>
+  )
 }
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <TenantProvider>
-          <AppContent />
-        </TenantProvider>
-      </AuthProvider>
-    </Router>
-  );
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<LoginRoute />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+        <Route path="/patients/:id" element={<ProtectedRoute><PatientDetails /></ProtectedRoute>} />
+        <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+        <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+        <Route path="/pharmacy" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+        <Route path="/data-management" element={<ProtectedRoute><DataImportExport /></ProtectedRoute>} />
+        <Route path="/organization" element={<ProtectedRoute><OrganizationSettings /></ProtectedRoute>} />
+      </Routes>
+    </AuthProvider>
+  )
 }
 
-export default App;
+const LoginRoute = () => {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
+  return user ? <Navigate to="/dashboard" replace /> : <Login />
+}
+
+export default App

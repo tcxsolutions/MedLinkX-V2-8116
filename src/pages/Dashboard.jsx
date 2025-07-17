@@ -1,127 +1,107 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import Card from '../components/common/Card';
-import SafeIcon from '../components/common/SafeIcon';
-import * as FiIcons from 'react-icons/fi';
-import ReactECharts from 'echarts-for-react';
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import Card from '../components/common/Card'
+import SafeIcon from '../components/common/SafeIcon'
+import { useAuth } from '../contexts/AuthContext'
+import { useOrganization } from '../contexts/OrganizationContext'
+import * as FiIcons from 'react-icons/fi'
 
-const { 
-  FiUsers, FiCalendar, FiActivity, FiDollarSign, 
-  FiTrendingUp, FiTrendingDown, FiClock, FiAlertTriangle
-} = FiIcons;
+const { FiUsers, FiCalendar, FiDollarSign, FiTrendingUp, FiActivity, FiHeart, FiPackage, FiAlertCircle } = FiIcons
 
 const Dashboard = () => {
+  const { user } = useAuth()
+  const { selectedOrganization } = useOrganization()
+  const [timeRange, setTimeRange] = useState('today')
+
   const stats = [
     {
       title: 'Total Patients',
       value: '1,234',
       change: '+12%',
-      trend: 'up',
+      changeType: 'positive',
       icon: FiUsers,
-      color: 'primary'
+      color: 'bg-blue-500'
     },
     {
       title: 'Today\'s Appointments',
       value: '45',
-      change: '+8%',
-      trend: 'up',
+      change: '+5%',
+      changeType: 'positive',
       icon: FiCalendar,
-      color: 'success'
+      color: 'bg-green-500'
     },
     {
-      title: 'Active Cases',
-      value: '89',
-      change: '-5%',
-      trend: 'down',
-      icon: FiActivity,
-      color: 'warning'
-    },
-    {
-      title: 'Revenue (MTD)',
+      title: 'Monthly Revenue',
       value: '$125,430',
-      change: '+15%',
-      trend: 'up',
+      change: '+8%',
+      changeType: 'positive',
       icon: FiDollarSign,
-      color: 'primary'
-    }
-  ];
-
-  const recentPatients = [
-    { id: 1, name: 'John Doe', age: 45, condition: 'Hypertension', status: 'Active', time: '2 hours ago' },
-    { id: 2, name: 'Jane Smith', age: 32, condition: 'Diabetes', status: 'Discharged', time: '4 hours ago' },
-    { id: 3, name: 'Bob Johnson', age: 67, condition: 'Chest Pain', status: 'Critical', time: '6 hours ago' },
-    { id: 4, name: 'Alice Brown', age: 28, condition: 'Pregnancy', status: 'Active', time: '1 day ago' }
-  ];
-
-  const appointments = [
-    { id: 1, patient: 'Sarah Wilson', time: '09:00 AM', type: 'Consultation', status: 'Confirmed' },
-    { id: 2, patient: 'Mike Davis', time: '10:30 AM', type: 'Follow-up', status: 'Pending' },
-    { id: 3, patient: 'Lisa Garcia', time: '02:00 PM', type: 'Surgery', status: 'Confirmed' },
-    { id: 4, patient: 'Tom Anderson', time: '03:30 PM', type: 'Check-up', status: 'Cancelled' }
-  ];
-
-  const patientFlowData = {
-    title: { text: 'Patient Flow - Last 7 Days' },
-    tooltip: { trigger: 'axis' },
-    xAxis: {
-      type: 'category',
-      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      color: 'bg-purple-500'
     },
-    yAxis: { type: 'value' },
-    series: [
-      {
-        name: 'Admissions',
-        type: 'line',
-        data: [23, 28, 31, 25, 29, 22, 18],
-        smooth: true,
-        itemStyle: { color: '#3b82f6' }
-      },
-      {
-        name: 'Discharges',
-        type: 'line',
-        data: [18, 24, 26, 22, 25, 20, 15],
-        smooth: true,
-        itemStyle: { color: '#22c55e' }
-      }
-    ]
-  };
-
-  const departmentData = {
-    title: { text: 'Department Occupancy' },
-    tooltip: { trigger: 'item' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        data: [
-          { value: 35, name: 'Emergency' },
-          { value: 28, name: 'Cardiology' },
-          { value: 22, name: 'Orthopedics' },
-          { value: 18, name: 'Pediatrics' },
-          { value: 12, name: 'Neurology' }
-        ],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        }
-      }
-    ]
-  };
-
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'active': return 'bg-success-100 text-success-800';
-      case 'critical': return 'bg-danger-100 text-danger-800';
-      case 'discharged': return 'bg-gray-100 text-gray-800';
-      case 'confirmed': return 'bg-primary-100 text-primary-800';
-      case 'pending': return 'bg-warning-100 text-warning-800';
-      case 'cancelled': return 'bg-danger-100 text-danger-800';
-      default: return 'bg-gray-100 text-gray-800';
+    {
+      title: 'Bed Occupancy',
+      value: '78%',
+      change: '+2%',
+      changeType: 'positive',
+      icon: FiActivity,
+      color: 'bg-orange-500'
     }
-  };
+  ]
+
+  const recentActivities = [
+    {
+      id: 1,
+      type: 'appointment',
+      message: 'New appointment scheduled with Dr. Smith',
+      time: '2 minutes ago',
+      icon: FiCalendar
+    },
+    {
+      id: 2,
+      type: 'patient',
+      message: 'Patient John Doe checked in',
+      time: '5 minutes ago',
+      icon: FiUsers
+    },
+    {
+      id: 3,
+      type: 'inventory',
+      message: 'Low inventory alert: Surgical gloves',
+      time: '10 minutes ago',
+      icon: FiPackage
+    },
+    {
+      id: 4,
+      type: 'billing',
+      message: 'Payment received from Jane Smith',
+      time: '15 minutes ago',
+      icon: FiDollarSign
+    }
+  ]
+
+  const upcomingAppointments = [
+    {
+      id: 1,
+      patient: 'Alice Johnson',
+      doctor: 'Dr. Smith',
+      time: '09:00 AM',
+      type: 'Consultation'
+    },
+    {
+      id: 2,
+      patient: 'Bob Wilson',
+      doctor: 'Dr. Brown',
+      time: '10:30 AM',
+      type: 'Follow-up'
+    },
+    {
+      id: 3,
+      patient: 'Carol Davis',
+      doctor: 'Dr. Johnson',
+      time: '02:00 PM',
+      type: 'Check-up'
+    }
+  ]
 
   return (
     <motion.div
@@ -132,13 +112,23 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Overview of your healthcare system</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Welcome back, {user?.name?.split(' ')[0]}! 👋
+          </h1>
+          <p className="text-gray-600">
+            Here's what's happening at {selectedOrganization?.name || 'your organization'} today
+          </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-            Generate Report
-          </button>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+          </select>
         </div>
       </div>
 
@@ -151,23 +141,23 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="relative overflow-hidden">
+            <Card>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                  <div className="flex items-center mt-2">
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <div className="flex items-center mt-1">
                     <SafeIcon 
-                      icon={stat.trend === 'up' ? FiTrendingUp : FiTrendingDown} 
-                      className={`w-4 h-4 mr-1 ${stat.trend === 'up' ? 'text-success-600' : 'text-danger-600'}`} 
+                      icon={stat.changeType === 'positive' ? FiTrendingUp : FiTrendingUp} 
+                      className={`w-4 h-4 ${stat.changeType === 'positive' ? 'text-green-500' : 'text-red-500'}`} 
                     />
-                    <span className={`text-sm font-medium ${stat.trend === 'up' ? 'text-success-600' : 'text-danger-600'}`}>
+                    <span className={`text-sm ${stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
                       {stat.change}
                     </span>
                   </div>
                 </div>
-                <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
-                  <SafeIcon icon={stat.icon} className={`w-6 h-6 text-${stat.color}-600`} />
+                <div className={`p-3 rounded-lg ${stat.color} bg-opacity-10`}>
+                  <SafeIcon icon={stat.icon} className={`w-6 h-6 ${stat.color.replace('bg-', 'text-')}`} />
                 </div>
               </div>
             </Card>
@@ -175,39 +165,19 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Patient Flow">
-          <ReactECharts option={patientFlowData} style={{ height: '300px' }} />
-        </Card>
-        <Card title="Department Occupancy">
-          <ReactECharts option={departmentData} style={{ height: '300px' }} />
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Patients */}
-        <Card title="Recent Patients" subtitle="Latest patient admissions">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Recent Activities */}
+        <Card title="Recent Activities" className="xl:col-span-2">
           <div className="space-y-4">
-            {recentPatients.map((patient) => (
-              <div key={patient.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {patient.name.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{patient.name}</p>
-                    <p className="text-sm text-gray-500">{patient.condition} • Age {patient.age}</p>
-                  </div>
+            {recentActivities.map((activity) => (
+              <div key={activity.id} className="flex items-start space-x-3">
+                <div className="p-2 bg-primary-100 rounded-lg">
+                  <SafeIcon icon={activity.icon} className="w-4 h-4 text-primary-600" />
                 </div>
-                <div className="text-right">
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(patient.status)}`}>
-                    {patient.status}
-                  </span>
-                  <p className="text-xs text-gray-500 mt-1">{patient.time}</p>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-800">{activity.message}</p>
+                  <p className="text-xs text-gray-500">{activity.time}</p>
                 </div>
               </div>
             ))}
@@ -215,52 +185,74 @@ const Dashboard = () => {
         </Card>
 
         {/* Upcoming Appointments */}
-        <Card title="Today's Appointments" subtitle="Scheduled appointments">
+        <Card title="Today's Appointments">
           <div className="space-y-4">
-            {appointments.map((appointment) => (
+            {upcomingAppointments.map((appointment) => (
               <div key={appointment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-primary-100 rounded-lg">
-                    <SafeIcon icon={FiClock} className="w-5 h-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{appointment.patient}</p>
-                    <p className="text-sm text-gray-500">{appointment.type}</p>
-                  </div>
+                <div>
+                  <p className="font-medium text-gray-900">{appointment.patient}</p>
+                  <p className="text-sm text-gray-600">{appointment.doctor}</p>
+                  <p className="text-xs text-gray-500">{appointment.type}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{appointment.time}</p>
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
-                    {appointment.status}
-                  </span>
+                  <p className="text-sm font-medium text-primary-600">{appointment.time}</p>
                 </div>
               </div>
             ))}
           </div>
         </Card>
+
+        {/* Quick Actions */}
+        <Card title="Quick Actions">
+          <div className="grid grid-cols-2 gap-3">
+            <button className="flex flex-col items-center p-4 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors">
+              <SafeIcon icon={FiUsers} className="w-6 h-6 text-primary-600 mb-2" />
+              <span className="text-sm font-medium text-primary-700">Add Patient</span>
+            </button>
+            <button className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+              <SafeIcon icon={FiCalendar} className="w-6 h-6 text-green-600 mb-2" />
+              <span className="text-sm font-medium text-green-700">Schedule</span>
+            </button>
+            <button className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+              <SafeIcon icon={FiDollarSign} className="w-6 h-6 text-purple-600 mb-2" />
+              <span className="text-sm font-medium text-purple-700">Billing</span>
+            </button>
+            <button className="flex flex-col items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+              <SafeIcon icon={FiPackage} className="w-6 h-6 text-orange-600 mb-2" />
+              <span className="text-sm font-medium text-orange-700">Inventory</span>
+            </button>
+          </div>
+        </Card>
+
+        {/* System Status */}
+        <Card title="System Status">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Database</span>
+              </div>
+              <span className="text-sm text-green-600">Online</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">API Services</span>
+              </div>
+              <span className="text-sm text-green-600">Online</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Backup</span>
+              </div>
+              <span className="text-sm text-yellow-600">Running</span>
+            </div>
+          </div>
+        </Card>
       </div>
-
-      {/* Alerts */}
-      <Card title="System Alerts" subtitle="Important notifications">
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3 p-3 bg-warning-50 rounded-lg">
-            <SafeIcon icon={FiAlertTriangle} className="w-5 h-5 text-warning-600" />
-            <div>
-              <p className="text-sm font-medium text-warning-800">Low Inventory Alert</p>
-              <p className="text-xs text-warning-600">Paracetamol stock is running low (5 units remaining)</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3 p-3 bg-danger-50 rounded-lg">
-            <SafeIcon icon={FiAlertTriangle} className="w-5 h-5 text-danger-600" />
-            <div>
-              <p className="text-sm font-medium text-danger-800">Critical Patient</p>
-              <p className="text-xs text-danger-600">Patient Bob Johnson requires immediate attention</p>
-            </div>
-          </div>
-        </div>
-      </Card>
     </motion.div>
-  );
-};
+  )
+}
 
-export default Dashboard;
+export default Dashboard

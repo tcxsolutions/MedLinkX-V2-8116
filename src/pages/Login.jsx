@@ -1,60 +1,74 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import SafeIcon from '../components/common/SafeIcon';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import * as FiIcons from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
-
-const { 
-  FiActivity, FiEye, FiEyeOff, FiUsers, FiCalendar, FiPill, 
-  FiDollarSign, FiPackage, FiFileText, FiShield, FiHeart,
-  FiTrendingUp, FiClock, FiStar, FiZap
-} = FiIcons;
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
+import { 
+  FiActivity, 
+  FiUsers, 
+  FiCalendar, 
+  FiPackage, 
+  FiDollarSign, 
+  FiFileText, 
+  FiShield, 
+  FiHeart, 
+  FiEye, 
+  FiEyeOff, 
+  FiLogIn, 
+  FiInfo 
+} from 'react-icons/fi'
 
 const Login = () => {
-  const { login, loading } = useAuth();
-  const [formData, setFormData] = useState({
-    email: 'admin@medlinkx.com',
-    password: 'admin123'
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('admin@medlinkx.com')
+  const [password, setPassword] = useState('admin123')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState(null)
 
   const features = [
     { icon: FiUsers, title: 'Patient Management', desc: 'Complete patient records & history' },
     { icon: FiCalendar, title: 'Smart Scheduling', desc: 'AI-powered appointment system' },
-    { icon: FiPill, title: 'Pharmacy Integration', desc: 'Digital prescriptions & inventory' },
+    { icon: FiPackage, title: 'Medical Supplies', desc: 'Digital inventory management' },
     { icon: FiDollarSign, title: 'Billing & Claims', desc: 'Automated insurance processing' },
-    { icon: FiPackage, title: 'Inventory Control', desc: 'Real-time stock management' },
+    { icon: FiActivity, title: 'Vital Monitoring', desc: 'Real-time patient vitals' },
     { icon: FiFileText, title: 'Analytics & Reports', desc: 'Data-driven insights' },
     { icon: FiShield, title: 'HIPAA Compliant', desc: 'Enterprise-grade security' },
-    { icon: FiHeart, title: 'Telemedicine', desc: 'Remote patient care' }
-  ];
+    { icon: FiHeart, title: 'Patient Care', desc: 'Enhanced healthcare delivery' }
+  ]
 
   const stats = [
     { value: '10K+', label: 'Healthcare Providers' },
     { value: '1M+', label: 'Patients Served' },
     { value: '99.9%', label: 'Uptime' },
     { value: '24/7', label: 'Support' }
-  ];
+  ]
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    const result = await login(formData);
-    if (!result.success) {
-      setError(result.error || 'Login failed');
-    }
-  };
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    try {
+      const result = await login({ email, password })
+      
+      if (result.success) {
+        navigate('/dashboard')
+      } else {
+        setError(result.error || 'Login failed')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('An unexpected error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Left Side - Features & Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Left Side - Features */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-72 h-72 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
@@ -64,14 +78,14 @@ const Login = () => {
 
         <div className="relative z-10 flex flex-col justify-center p-12 text-white">
           {/* Logo & Title */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
             <div className="flex items-center space-x-4 mb-6">
               <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <SafeIcon icon={FiActivity} className="w-8 h-8 text-white" />
+                <FiActivity className="w-8 h-8 text-white" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
@@ -83,7 +97,7 @@ const Login = () => {
           </motion.div>
 
           {/* Stats */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -98,7 +112,7 @@ const Login = () => {
           </motion.div>
 
           {/* Features Grid */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -114,7 +128,7 @@ const Login = () => {
               >
                 <div className="flex items-start space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <SafeIcon icon={feature.icon} className="w-5 h-5 text-white" />
+                    <feature.icon className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-white text-sm mb-1">{feature.title}</h3>
@@ -124,37 +138,11 @@ const Login = () => {
               </motion.div>
             ))}
           </motion.div>
-
-          {/* Testimonial */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="mt-8 bg-white/10 backdrop-blur-sm rounded-xl p-6"
-          >
-            <div className="flex items-center space-x-1 mb-3">
-              {[...Array(5)].map((_, i) => (
-                <SafeIcon key={i} icon={FiStar} className="w-4 h-4 text-yellow-400 fill-current" />
-              ))}
-            </div>
-            <p className="text-white/90 text-sm italic mb-3">
-              "MedLinkX has revolutionized our hospital operations. The intuitive interface and powerful features have improved our efficiency by 40%."
-            </p>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">DS</span>
-              </div>
-              <div>
-                <p className="text-white text-sm font-medium">Dr. Sarah Johnson</p>
-                <p className="text-blue-200 text-xs">Chief Medical Officer</p>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -164,7 +152,7 @@ const Login = () => {
             {/* Mobile Logo */}
             <div className="lg:hidden text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <SafeIcon icon={FiActivity} className="w-8 h-8 text-white" />
+                <FiActivity className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 MedLinkX
@@ -193,17 +181,13 @@ const Login = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  required
+                />
               </div>
 
               <div>
@@ -213,11 +197,9 @@ const Login = () => {
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 transition-all"
-                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 transition-all"
                     required
                   />
                   <button
@@ -225,7 +207,11 @@ const Login = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    <SafeIcon icon={showPassword ? FiEyeOff : FiEye} className="w-5 h-5" />
+                    {showPassword ? (
+                      <FiEyeOff className="w-5 h-5" />
+                    ) : (
+                      <FiEye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -235,13 +221,13 @@ const Login = () => {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
               >
                 {loading ? (
-                  <LoadingSpinner size="sm" />
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <SafeIcon icon={FiZap} className="w-5 h-5" />
+                    <FiLogIn className="w-5 h-5" />
                     <span>Sign In</span>
                   </>
                 )}
@@ -250,7 +236,10 @@ const Login = () => {
 
             {/* Demo credentials */}
             <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-              <p className="text-sm text-gray-600 mb-2 font-medium">Admin Credentials:</p>
+              <div className="flex items-center space-x-2 mb-2">
+                <FiInfo className="w-4 h-4 text-blue-600" />
+                <p className="text-sm text-gray-600 font-medium">Demo Credentials:</p>
+              </div>
               <div className="text-xs text-gray-500 space-y-1">
                 <p>📧 Email: admin@medlinkx.com</p>
                 <p>🔒 Password: admin123</p>
@@ -267,7 +256,7 @@ const Login = () => {
         </motion.div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login
