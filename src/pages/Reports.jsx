@@ -2,24 +2,74 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Card from '../components/common/Card';
 import SafeIcon from '../components/common/SafeIcon';
-import ReactECharts from 'echarts-for-react';
 import * as FiIcons from 'react-icons/fi';
-
-const { 
-  FiFileText, FiDownload, FiBarChart2, FiPieChart, 
-  FiUsers, FiCalendar, FiActivity, FiDollarSign
-} = FiIcons;
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
 
 const Reports = () => {
   const [selectedReport, setSelectedReport] = useState('patient-demographics');
   const [dateRange, setDateRange] = useState('month');
 
+  // Sample data for patient demographics chart
+  const patientDemographicsData = [
+    { name: '0-18 years', value: 240 },
+    { name: '19-35 years', value: 580 },
+    { name: '36-50 years', value: 484 },
+    { name: '51-65 years', value: 300 },
+    { name: '65+ years', value: 180 }
+  ];
+
+  // Sample data for appointment statistics
+  const appointmentStatisticsData = [
+    { name: 'Mon', Scheduled: 18, Completed: 15, Cancelled: 3 },
+    { name: 'Tue', Scheduled: 23, Completed: 22, Cancelled: 1 },
+    { name: 'Wed', Scheduled: 29, Completed: 26, Cancelled: 3 },
+    { name: 'Thu', Scheduled: 27, Completed: 24, Cancelled: 3 },
+    { name: 'Fri', Scheduled: 25, Completed: 22, Cancelled: 3 },
+    { name: 'Sat', Scheduled: 12, Completed: 10, Cancelled: 2 },
+    { name: 'Sun', Scheduled: 8, Completed: 7, Cancelled: 1 }
+  ];
+
+  // Sample data for revenue analysis
+  const revenueAnalysisData = [
+    { name: 'Jan', Insurance: 25000, OutOfPocket: 5000, Total: 30000 },
+    { name: 'Feb', Insurance: 28000, OutOfPocket: 5500, Total: 33500 },
+    { name: 'Mar', Insurance: 32000, OutOfPocket: 6000, Total: 38000 },
+    { name: 'Apr', Insurance: 30000, OutOfPocket: 5800, Total: 35800 },
+    { name: 'May', Insurance: 35000, OutOfPocket: 6200, Total: 41200 },
+    { name: 'Jun', Insurance: 38000, OutOfPocket: 6500, Total: 44500 }
+  ];
+
+  // Sample data for inventory usage
+  const inventoryUsageData = [
+    { name: 'Surgical Gloves', value: 580 },
+    { name: 'Syringes', value: 480 },
+    { name: 'Gauze', value: 350 },
+    { name: 'Bandages', value: 320 },
+    { name: 'IV Fluids', value: 290 }
+  ];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
   const reports = [
-    { id: 'patient-demographics', name: 'Patient Demographics', icon: FiUsers },
-    { id: 'appointment-statistics', name: 'Appointment Statistics', icon: FiCalendar },
-    { id: 'revenue-analysis', name: 'Revenue Analysis', icon: FiDollarSign },
-    { id: 'inventory-usage', name: 'Inventory Usage', icon: FiActivity },
-    { id: 'prescription-trends', name: 'Prescription Trends', icon: FiActivity }
+    { id: 'patient-demographics', name: 'Patient Demographics', icon: FiIcons.FiUsers },
+    { id: 'appointment-statistics', name: 'Appointment Statistics', icon: FiIcons.FiCalendar },
+    { id: 'revenue-analysis', name: 'Revenue Analysis', icon: FiIcons.FiDollarSign },
+    { id: 'inventory-usage', name: 'Inventory Usage', icon: FiIcons.FiActivity },
+    { id: 'prescription-trends', name: 'Prescription Trends', icon: FiIcons.FiActivity }
   ];
 
   const dateRanges = [
@@ -29,168 +79,79 @@ const Reports = () => {
     { id: 'year', name: 'Last Year' }
   ];
 
-  // Sample data for patient demographics chart
-  const patientDemographicsData = {
-    title: { text: 'Patient Age Groups' },
-    tooltip: { trigger: 'item' },
-    legend: {
-      orient: 'vertical',
-      right: 10,
-      top: 'center'
-    },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: { show: false },
-        labelLine: { show: false },
-        data: [
-          { value: 240, name: '0-18 years' },
-          { value: 580, name: '19-35 years' },
-          { value: 484, name: '36-50 years' },
-          { value: 300, name: '51-65 years' },
-          { value: 180, name: '65+ years' }
-        ]
-      }
-    ]
-  };
-
-  // Sample data for appointment statistics chart
-  const appointmentStatisticsData = {
-    title: { text: 'Appointment Types' },
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['Scheduled', 'Completed', 'Cancelled'] },
-    xAxis: {
-      type: 'category',
-      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    },
-    yAxis: { type: 'value' },
-    series: [
-      {
-        name: 'Scheduled',
-        type: 'bar',
-        data: [18, 23, 29, 27, 25, 12, 8],
-        itemStyle: { color: '#3b82f6' }
-      },
-      {
-        name: 'Completed',
-        type: 'bar',
-        data: [15, 22, 26, 24, 22, 10, 7],
-        itemStyle: { color: '#22c55e' }
-      },
-      {
-        name: 'Cancelled',
-        type: 'bar',
-        data: [3, 1, 3, 3, 3, 2, 1],
-        itemStyle: { color: '#ef4444' }
-      }
-    ]
-  };
-
-  // Sample data for revenue analysis chart
-  const revenueAnalysisData = {
-    title: { text: 'Monthly Revenue' },
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['Insurance', 'Out of Pocket', 'Total'] },
-    xAxis: {
-      type: 'category',
-      data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-    },
-    yAxis: { type: 'value' },
-    series: [
-      {
-        name: 'Insurance',
-        type: 'line',
-        data: [25000, 28000, 32000, 30000, 35000, 38000],
-        itemStyle: { color: '#3b82f6' }
-      },
-      {
-        name: 'Out of Pocket',
-        type: 'line',
-        data: [5000, 5500, 6000, 5800, 6200, 6500],
-        itemStyle: { color: '#22c55e' }
-      },
-      {
-        name: 'Total',
-        type: 'line',
-        data: [30000, 33500, 38000, 35800, 41200, 44500],
-        lineStyle: { width: 3 },
-        itemStyle: { color: '#f59e0b' }
-      }
-    ]
-  };
-
-  // Sample data for inventory usage chart
-  const inventoryUsageData = {
-    title: { text: 'Top 5 Most Used Items' },
-    tooltip: { trigger: 'axis' },
-    xAxis: {
-      type: 'value'
-    },
-    yAxis: {
-      type: 'category',
-      data: ['Surgical Gloves', 'Syringes', 'Gauze', 'Bandages', 'IV Fluids']
-    },
-    series: [
-      {
-        name: 'Usage Count',
-        type: 'bar',
-        data: [580, 480, 350, 320, 290],
-        itemStyle: { color: '#3b82f6' }
-      }
-    ]
-  };
-
-  // Sample data for prescription trends chart
-  const prescriptionTrendsData = {
-    title: { text: 'Most Prescribed Medications' },
-    tooltip: { trigger: 'item' },
-    legend: {
-      orient: 'vertical',
-      right: 10,
-      top: 'center'
-    },
-    series: [
-      {
-        type: 'pie',
-        radius: '60%',
-        data: [
-          { value: 235, name: 'Lisinopril' },
-          { value: 274, name: 'Metformin' },
-          { value: 310, name: 'Amoxicillin' },
-          { value: 335, name: 'Ibuprofen' },
-          { value: 400, name: 'Atorvastatin' }
-        ],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        }
-      }
-    ]
-  };
-
   // Helper function to render the appropriate chart based on selected report
   const renderReportChart = () => {
     switch (selectedReport) {
       case 'patient-demographics':
-        return <ReactECharts option={patientDemographicsData} style={{ height: '400px' }} />;
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={patientDemographicsData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={150}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+              >
+                {patientDemographicsData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+
       case 'appointment-statistics':
-        return <ReactECharts option={appointmentStatisticsData} style={{ height: '400px' }} />;
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={appointmentStatisticsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="Scheduled" fill="#0088FE" />
+              <Bar dataKey="Completed" fill="#00C49F" />
+              <Bar dataKey="Cancelled" fill="#FF8042" />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+
       case 'revenue-analysis':
-        return <ReactECharts option={revenueAnalysisData} style={{ height: '400px' }} />;
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={revenueAnalysisData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="Insurance" stroke="#0088FE" />
+              <Line type="monotone" dataKey="OutOfPocket" stroke="#00C49F" />
+              <Line type="monotone" dataKey="Total" stroke="#FFBB28" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
       case 'inventory-usage':
-        return <ReactECharts option={inventoryUsageData} style={{ height: '400px' }} />;
-      case 'prescription-trends':
-        return <ReactECharts option={prescriptionTrendsData} style={{ height: '400px' }} />;
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={inventoryUsageData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="name" type="category" />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#0088FE" />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+
       default:
         return <div>Select a report to view</div>;
     }
@@ -215,7 +176,7 @@ const Reports = () => {
           <p className="text-gray-600">Generate and view detailed reports on various metrics</p>
         </div>
         <button className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-          <SafeIcon icon={FiDownload} className="w-5 h-5" />
+          <SafeIcon icon={FiIcons.FiDownload} className="w-5 h-5" />
           <span>Export Report</span>
         </button>
       </div>
@@ -236,7 +197,9 @@ const Reports = () => {
                   className={`w-6 h-6 ${selectedReport === report.id ? 'text-primary-600' : 'text-gray-600'}`}
                 />
               </div>
-              <p className={`mt-2 font-medium text-sm ${selectedReport === report.id ? 'text-primary-700' : 'text-gray-700'}`}>
+              <p className={`mt-2 font-medium text-sm ${
+                selectedReport === report.id ? 'text-primary-700' : 'text-gray-700'
+              }`}>
                 {report.name}
               </p>
             </div>
@@ -248,7 +211,7 @@ const Reports = () => {
       <Card>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <SafeIcon icon={FiCalendar} className="w-5 h-5 text-gray-400" />
+            <SafeIcon icon={FiIcons.FiCalendar} className="w-5 h-5 text-gray-400" />
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
@@ -261,15 +224,15 @@ const Reports = () => {
           </div>
           <div className="flex items-center space-x-4">
             <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-              <SafeIcon icon={FiBarChart2} className="w-4 h-4" />
+              <SafeIcon icon={FiIcons.FiBarChart2} className="w-4 h-4" />
               <span>Bar</span>
             </button>
             <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-              <SafeIcon icon={FiPieChart} className="w-4 h-4" />
+              <SafeIcon icon={FiIcons.FiPieChart} className="w-4 h-4" />
               <span>Pie</span>
             </button>
             <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-              <SafeIcon icon={FiFileText} className="w-4 h-4" />
+              <SafeIcon icon={FiIcons.FiFileText} className="w-4 h-4" />
               <span>Table</span>
             </button>
           </div>
@@ -277,102 +240,12 @@ const Reports = () => {
       </Card>
 
       {/* Report Content */}
-      <Card title={getReportTitle()} subtitle={`Data for ${dateRanges.find(r => r.id === dateRange)?.name || 'selected period'}`}>
+      <Card
+        title={getReportTitle()}
+        subtitle={`Data for ${dateRanges.find(r => r.id === dateRange)?.name || 'selected period'}`}
+      >
         {renderReportChart()}
       </Card>
-
-      {/* Report Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card title="Key Findings">
-          <div className="space-y-3">
-            <div className="p-3 bg-primary-50 rounded-lg">
-              <p className="text-sm font-medium text-primary-800">Primary Observation</p>
-              <p className="text-sm text-primary-700">
-                {selectedReport === 'patient-demographics' && 'Majority of patients are between 19-50 years old (67%)'}
-                {selectedReport === 'appointment-statistics' && 'Wednesday has the highest appointment volume'}
-                {selectedReport === 'revenue-analysis' && 'Revenue is growing steadily with 15% YOY increase'}
-                {selectedReport === 'inventory-usage' && 'Surgical gloves are the most consumed inventory item'}
-                {selectedReport === 'prescription-trends' && 'Atorvastatin is the most prescribed medication'}
-              </p>
-            </div>
-            <div className="p-3 bg-success-50 rounded-lg">
-              <p className="text-sm font-medium text-success-800">Positive Trend</p>
-              <p className="text-sm text-success-700">
-                {selectedReport === 'patient-demographics' && 'Patient retention rate improved by 12%'}
-                {selectedReport === 'appointment-statistics' && 'Appointment completion rate is at 88%'}
-                {selectedReport === 'revenue-analysis' && 'Insurance reimbursement time reduced by 15%'}
-                {selectedReport === 'inventory-usage' && 'Inventory wastage reduced by 8%'}
-                {selectedReport === 'prescription-trends' && 'Generic medication prescriptions increased by 15%'}
-              </p>
-            </div>
-            <div className="p-3 bg-warning-50 rounded-lg">
-              <p className="text-sm font-medium text-warning-800">Area of Concern</p>
-              <p className="text-sm text-warning-700">
-                {selectedReport === 'patient-demographics' && 'Low representation in 65+ age group'}
-                {selectedReport === 'appointment-statistics' && 'Weekend appointments are significantly lower'}
-                {selectedReport === 'revenue-analysis' && 'Increased claim denials in the last month'}
-                {selectedReport === 'inventory-usage' && '3 critical items are near stock-out levels'}
-                {selectedReport === 'prescription-trends' && 'High antibiotic prescription rate needs review'}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Recommendations">
-          <ul className="space-y-3 text-sm text-gray-700">
-            <li className="flex items-start space-x-2">
-              <span className="inline-block w-5 h-5 bg-primary-100 text-primary-700 rounded-full flex-shrink-0 flex items-center justify-center font-medium">1</span>
-              <span>
-                {selectedReport === 'patient-demographics' && 'Develop targeted outreach programs for seniors'}
-                {selectedReport === 'appointment-statistics' && 'Optimize scheduling to balance weekday appointments'}
-                {selectedReport === 'revenue-analysis' && 'Review claim submission process to reduce denials'}
-                {selectedReport === 'inventory-usage' && 'Implement automated reordering for high-use items'}
-                {selectedReport === 'prescription-trends' && 'Conduct prescriber education on antibiotic stewardship'}
-              </span>
-            </li>
-            <li className="flex items-start space-x-2">
-              <span className="inline-block w-5 h-5 bg-primary-100 text-primary-700 rounded-full flex-shrink-0 flex items-center justify-center font-medium">2</span>
-              <span>
-                {selectedReport === 'patient-demographics' && 'Create specialized care packages for different age groups'}
-                {selectedReport === 'appointment-statistics' && 'Implement SMS reminders to reduce cancellations'}
-                {selectedReport === 'revenue-analysis' && 'Negotiate better rates with top insurance providers'}
-                {selectedReport === 'inventory-usage' && 'Consider alternative suppliers for high-cost items'}
-                {selectedReport === 'prescription-trends' && 'Review formulary to include more cost-effective options'}
-              </span>
-            </li>
-            <li className="flex items-start space-x-2">
-              <span className="inline-block w-5 h-5 bg-primary-100 text-primary-700 rounded-full flex-shrink-0 flex items-center justify-center font-medium">3</span>
-              <span>
-                {selectedReport === 'patient-demographics' && 'Analyze patient satisfaction by demographic'}
-                {selectedReport === 'appointment-statistics' && 'Extend hours on high-demand days'}
-                {selectedReport === 'revenue-analysis' && 'Implement payment plans for patients with high balances'}
-                {selectedReport === 'inventory-usage' && 'Train staff on proper inventory management'}
-                {selectedReport === 'prescription-trends' && 'Implement drug interaction checking system'}
-              </span>
-            </li>
-          </ul>
-        </Card>
-
-        <Card title="Related Reports">
-          <div className="space-y-3">
-            {reports.filter(report => report.id !== selectedReport).slice(0, 3).map((report) => (
-              <button
-                key={report.id}
-                onClick={() => setSelectedReport(report.id)}
-                className="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="p-2 bg-gray-200 rounded-lg">
-                  <SafeIcon icon={report.icon} className="w-4 h-4 text-gray-700" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-gray-800">{report.name}</p>
-                  <p className="text-xs text-gray-500">View related insights</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </Card>
-      </div>
     </motion.div>
   );
 };

@@ -1,42 +1,116 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
-import { useTenant } from '../../contexts/TenantContext';
 import { useOrganization } from '../../contexts/OrganizationContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { tenant } = useTenant();
-  const { selectedOrganization } = useOrganization();
+  const { features, selectedOrganization } = useOrganization();
 
-  const menuItems = [
-    { icon: FiIcons.FiHome, label: 'Dashboard', path: '/dashboard', color: 'text-blue-600' },
-    { icon: FiIcons.FiUsers, label: 'Patients', path: '/patients', color: 'text-green-600' },
-    { icon: FiIcons.FiCalendar, label: 'Appointments', path: '/appointments', color: 'text-purple-600' },
-    { icon: FiIcons.FiActivity, label: 'Pharmacy', path: '/pharmacy', color: 'text-orange-600' },
-    { icon: FiIcons.FiDollarSign, label: 'Billing', path: '/billing', color: 'text-emerald-600' },
-    { icon: FiIcons.FiPackage, label: 'Inventory', path: '/inventory', color: 'text-indigo-600' },
-    { icon: FiIcons.FiFileText, label: 'Reports', path: '/reports', color: 'text-pink-600' },
-    { icon: FiIcons.FiUsers, label: 'Users', path: '/users', color: 'text-gray-600' },
-    { divider: true },
-    { icon: FiIcons.FiLayers, label: 'Organization', path: '/organization', color: 'text-violet-600' },
-    { icon: FiIcons.FiDatabase, label: 'Data Management', path: '/data-management', color: 'text-amber-600' }
-  ];
+  // Define menu items based on features and permissions
+  const menuItems = useMemo(() => {
+    const items = [
+      {
+        id: 'dashboard',
+        icon: FiIcons.FiHome,
+        label: 'Dashboard',
+        path: '/dashboard',
+        color: 'text-blue-600'
+      }
+    ];
 
-  const quickStats = [
-    { icon: FiIcons.FiUsers, value: '1,234', label: 'Patients', color: 'bg-blue-100 text-blue-600' },
-    { icon: FiIcons.FiCalendar, value: '45', label: 'Today', color: 'bg-green-100 text-green-600' },
-    { icon: FiIcons.FiTrendingUp, value: '94%', label: 'Efficiency', color: 'bg-purple-100 text-purple-600' }
-  ];
+    // Core Features - Always enabled for demo
+    items.push({
+      id: 'patients',
+      icon: FiIcons.FiUsers,
+      label: 'Patients',
+      path: '/patients',
+      color: 'text-green-600'
+    });
+    items.push({
+      id: 'appointments',
+      icon: FiIcons.FiCalendar,
+      label: 'Appointments',
+      path: '/appointments',
+      color: 'text-purple-600'
+    });
+    items.push({
+      id: 'billing',
+      icon: FiIcons.FiDollarSign,
+      label: 'Billing',
+      path: '/billing',
+      color: 'text-yellow-600'
+    });
+    items.push({
+      id: 'inventory',
+      icon: FiIcons.FiPackage,
+      label: 'Inventory',
+      path: '/inventory',
+      color: 'text-blue-600'
+    });
+    items.push({
+      id: 'pharmacy',
+      icon: FiIcons.FiActivity,
+      label: 'Pharmacy',
+      path: '/pharmacy',
+      color: 'text-green-600'
+    });
 
-  const isActive = (path) => location.pathname === path;
+    // Reports
+    items.push({
+      id: 'reports',
+      icon: FiIcons.FiBarChart2,
+      label: 'Reports',
+      path: '/reports',
+      color: 'text-purple-600'
+    });
 
-  // Modified sidebar animation to ensure it's always visible on desktop
-  const sidebarVariants = {
-    hidden: { x: -320 },
-    visible: { x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } }
+    // Admin Features
+    items.push({
+      id: 'users',
+      icon: FiIcons.FiUserCheck,
+      label: 'User Management',
+      path: '/users',
+      color: 'text-indigo-600'
+    });
+
+    // Add divider before admin section
+    items.push({ divider: true });
+
+    // Organization Management
+    items.push({
+      id: 'organizations',
+      icon: FiIcons.FiBriefcase,
+      label: 'Organization',
+      path: '/organizations',
+      color: 'text-gray-600'
+    });
+
+    // Data Management
+    items.push({
+      id: 'data',
+      icon: FiIcons.FiDatabase,
+      label: 'Data Management',
+      path: '/data-management',
+      color: 'text-gray-600'
+    });
+
+    return items;
+  }, [features]);
+
+  const getOrganizationColor = () => {
+    switch (selectedOrganization?.type) {
+      case 'individual':
+        return 'from-blue-600 to-blue-800';
+      case 'family_practice':
+        return 'from-green-600 to-green-800';
+      case 'hospital':
+        return 'from-purple-600 to-purple-800';
+      default:
+        return 'from-blue-600 to-purple-600';
+    }
   };
 
   return (
@@ -56,135 +130,102 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <motion.div
-        initial="hidden"
-        animate={isOpen ? "visible" : "hidden"}
-        variants={sidebarVariants}
-        className="fixed left-0 top-0 h-full w-80 bg-white shadow-2xl z-50 lg:relative lg:shadow-none border-r border-gray-200 lg:translate-x-0"
+        initial={false}
+        animate={{
+          x: isOpen ? 0 : -280,
+          transition: { type: "spring", damping: 25, stiffness: 200 }
+        }}
+        className="fixed left-0 top-0 h-full w-70 bg-white shadow-xl z-50 lg:relative lg:translate-x-0 lg:shadow-none lg:border-r lg:border-gray-200"
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-            <div className="flex items-center space-x-3">
-              {selectedOrganization?.logoUrl ? (
-                <div className="w-10 h-10 rounded-xl overflow-hidden">
-                  <img 
-                    src={selectedOrganization.logoUrl} 
-                    alt={selectedOrganization.name} 
-                    className="w-full h-full object-cover" 
-                  />
-                </div>
-              ) : (
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+          <div className={`bg-gradient-to-r ${getOrganizationColor()} p-6 text-white`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                   <SafeIcon icon={FiIcons.FiActivity} className="w-6 h-6 text-white" />
                 </div>
-              )}
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  MedLinkX
-                </h1>
-                <p className="text-xs text-gray-500 font-medium">
-                  {selectedOrganization?.name || tenant?.name || 'Healthcare Platform'}
-                </p>
+                <div>
+                  <h2 className="font-bold text-lg">MedLink EHR</h2>
+                  <p className="text-sm opacity-90">Healthcare Platform</p>
+                </div>
               </div>
+              <button
+                onClick={onClose}
+                className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <SafeIcon icon={FiIcons.FiX} className="w-5 h-5 text-white" />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <SafeIcon icon={FiIcons.FiX} className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50">
-            <div className="grid grid-cols-3 gap-3">
-              {quickStats.map((stat, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white rounded-xl p-3 text-center shadow-sm"
-                >
-                  <div className={`w-8 h-8 rounded-lg ${stat.color} flex items-center justify-center mx-auto mb-2`}>
-                    <SafeIcon icon={stat.icon} className="w-4 h-4" />
-                  </div>
-                  <div className="text-lg font-bold text-gray-900">{stat.value}</div>
-                  <div className="text-xs text-gray-500">{stat.label}</div>
-                </motion.div>
-              ))}
-            </div>
+            {selectedOrganization && (
+              <div className="mt-4 p-3 bg-white/10 rounded-lg">
+                <p className="text-sm opacity-90">Current Organization</p>
+                <p className="font-medium">{selectedOrganization.name}</p>
+                <p className="text-xs opacity-75 capitalize">{selectedOrganization.type}</p>
+              </div>
+            )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4 px-3">
-              Navigation
-            </div>
-            {menuItems.map((item, index) => (
-              item.divider ? (
-                <div key={`divider-${index}`} className="border-t border-gray-200 my-4"></div>
-              ) : (
-                <motion.div
-                  key={item.path}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
+          <nav className="flex-1 px-4 py-6 overflow-y-auto">
+            <div className="space-y-2">
+              {menuItems.map((item, index) => {
+                if (item.divider) {
+                  return (
+                    <div key={`divider-${index}`} className="my-6">
+                      <div className="border-t border-gray-200"></div>
+                      <p className="text-xs font-medium text-gray-500 mt-4 px-3">
+                        ADMINISTRATION
+                      </p>
+                    </div>
+                  );
+                }
+
+                const isActive =
+                  location.pathname === item.path ||
+                  (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+
+                return (
                   <Link
+                    key={item.id}
                     to={item.path}
-                    onClick={window.innerWidth < 1024 ? onClose : undefined}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                      isActive(item.path)
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    onClick={() => {
+                      if (onClose) onClose();
+                    }}
+                    className={`flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 group ${
+                      isActive
+                        ? 'bg-primary-50 text-primary-700 shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
-                      isActive(item.path)
-                        ? 'bg-white/20 text-white'
-                        : 'bg-gray-100 group-hover:bg-gray-200'
-                    }`}>
-                      <SafeIcon 
-                        icon={item.icon} 
-                        className={`w-5 h-5 ${
-                          isActive(item.path) ? 'text-white' : item.color
-                        }`} 
-                      />
-                    </div>
+                    <SafeIcon
+                      icon={item.icon}
+                      className={`w-5 h-5 transition-colors ${isActive ? 'text-primary-600' : item.color}`}
+                    />
                     <span className="font-medium">{item.label}</span>
-                    {isActive(item.path) && (
+                    {isActive && (
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="ml-auto w-2 h-2 bg-white rounded-full"
+                        layoutId="activeIndicator"
+                        className="w-2 h-2 bg-primary-600 rounded-full ml-auto"
+                        initial={false}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
                       />
                     )}
                   </Link>
-                </motion.div>
-              )
-            ))}
+                );
+              })}
+            </div>
           </nav>
 
           {/* Footer */}
           <div className="p-4 border-t border-gray-200">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                  <SafeIcon icon={FiIcons.FiShield} className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">HIPAA Compliant</p>
-                  <p className="text-xs text-gray-500">Enterprise Security</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Version 2.1.0</span>
-                <div className="flex items-center space-x-1">
-                  <SafeIcon icon={FiIcons.FiHeart} className="w-3 h-3 text-red-500" />
-                  <span>Healthcare</span>
-                </div>
-              </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500">
+                MedLink EHR v1.0.0
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Healthcare Management Platform
+              </p>
             </div>
           </div>
         </div>

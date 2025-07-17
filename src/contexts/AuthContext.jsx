@@ -1,128 +1,79 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import supabase from '../lib/supabase'
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
-const AuthContext = createContext()
+// Create authentication context
+const AuthContext = createContext();
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
-}
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Initialize auth state from localStorage
   useEffect(() => {
-    const initializeAuth = async () => {
+    const storedUser = localStorage.getItem('mockUser');
+    if (storedUser) {
       try {
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.user_metadata?.full_name || session.user.email,
-            role: 'Administrator',
-            department: 'Administration', 
-            tenantId: 'gznfjkvpdomkxkdunmma', // Multi-tenant ID
-            organizationId: 'gznfjkvpdomkxkdunmma',
-            isAdmin: true
-          })
-        }
+        setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error('Auth initialization error:', error)
-      } finally {
-        setLoading(false)
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('mockUser');
       }
     }
-
-    initializeAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.user_metadata?.full_name || session.user.email,
-            role: 'Administrator',
-            department: 'Administration',
-            tenantId: 'gznfjkvpdomkxkdunmma',
-            organizationId: 'gznfjkvpdomkxkdunmma', 
-            isAdmin: true
-          })
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
+    setLoading(false);
+  }, []);
 
   const login = async (credentials) => {
     try {
-      setLoading(true)
+      setLoading(true);
       
-      // For demo purposes, allow mock login
+      // Only use mock authentication for this demo
       if (credentials.email === 'admin@medlinkx.com' && credentials.password === 'admin123') {
         const mockUser = {
-          id: '1',
-          name: 'System Administrator',
-          email: 'admin@medlinkx.com',
+          id: 'mock-user-id',
+          email: credentials.email,
+          name: 'Admin User',
           role: 'Administrator',
-          department: 'Administration',
-          tenantId: 'gznfjkvpdomkxkdunmma',
-          organizationId: 'gznfjkvpdomkxkdunmma',
-          isAdmin: true
-        }
-        setUser(mockUser)
-        return { success: true }
+          department: 'Administration'
+        };
+        
+        setUser(mockUser);
+        localStorage.setItem('mockUser', JSON.stringify(mockUser));
+        console.log('Mock login successful');
+        return { success: true };
+      } else {
+        return { success: false, error: 'Invalid email or password. Use admin@medlinkx.com / admin123' };
       }
-
-      // Try actual Supabase authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
-      })
-
-      if (error) {
-        return { success: false, error: error.message }
-      }
-
-      return { success: true }
     } catch (error) {
-      return { success: false, error: error.message }
+      console.error('Login error:', error);
+      return { success: false, error: error.message };
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const logout = async () => {
-    try {
-      await supabase.auth.signOut()
-      setUser(null)
-    } catch (error) {
-      console.error('Logout error:', error)
-      setUser(null)
-    }
-  }
+    localStorage.removeItem('mockUser');
+    setUser(null);
+  };
 
   const value = {
     user,
     login,
     logout,
-    loading,
-  }
+    loading
+  };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};

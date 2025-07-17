@@ -4,13 +4,7 @@ import Card from '../common/Card';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useOrganization } from '../../contexts/OrganizationContext';
-import {
-  importData,
-  exportData,
-  getImportHistory,
-  getExportHistory,
-  bulkDeleteRecords
-} from '../../utils/importExportService';
+import { importData, exportData, getImportHistory, getExportHistory, bulkDeleteRecords, generateSampleFile } from '../../utils/importExportService';
 
 const DataImportExport = () => {
   const { selectedOrganization } = useOrganization();
@@ -28,20 +22,21 @@ const DataImportExport = () => {
   const [success, setSuccess] = useState('');
   const [selectedRecords, setSelectedRecords] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+  const [isGeneratingSample, setIsGeneratingSample] = useState(false);
+
   const dataTypes = [
     { id: 'patients', label: 'Patients', icon: FiIcons.FiUsers },
     { id: 'appointments', label: 'Appointments', icon: FiIcons.FiCalendar },
     { id: 'inventory', label: 'Inventory', icon: FiIcons.FiPackage },
     { id: 'billing', label: 'Billing', icon: FiIcons.FiDollarSign },
   ];
-  
+
   const exportFormats = [
     { id: 'csv', label: 'CSV', icon: FiIcons.FiFileText },
     { id: 'xlsx', label: 'Excel', icon: FiIcons.FiFileText },
     { id: 'json', label: 'JSON', icon: FiIcons.FiFileText },
   ];
-  
+
   // Fetch import and export history
   useEffect(() => {
     if (selectedOrganization) {
@@ -49,59 +44,57 @@ const DataImportExport = () => {
       fetchExportHistory();
     }
   }, [selectedOrganization]);
-  
+
   const fetchImportHistory = async () => {
     if (!selectedOrganization) return;
-    
     const result = await getImportHistory(selectedOrganization.id);
     if (result.success) {
       setImportHistory(result.imports);
     }
   };
-  
+
   const fetchExportHistory = async () => {
     if (!selectedOrganization) return;
-    
     const result = await getExportHistory(selectedOrganization.id);
     if (result.success) {
       setExportHistory(result.exports);
     }
   };
-  
+
   const handleFileChange = (e) => {
     setImportFile(e.target.files[0]);
     setError('');
   };
-  
+
   const handleImport = async () => {
     if (!importFile) {
       setError('Please select a file to import');
       return;
     }
-    
+
     try {
       setIsImporting(true);
       setError('');
       setSuccess('');
-      
+
       const result = await importData(
         importFile,
         importType,
         selectedOrganization.id,
         (progress) => setImportProgress(Math.round(progress * 100))
       );
-      
+
       if (!result.success) {
         setError(result.error);
         return;
       }
-      
+
       setSuccess(`Import completed successfully. ${result.summary.created} records created, ${result.summary.updated} records updated.`);
       setImportFile(null);
       if (document.getElementById('import-file')) {
         document.getElementById('import-file').value = '';
       }
-      
+
       // Refresh import history
       await fetchImportHistory();
     } catch (err) {
@@ -111,26 +104,26 @@ const DataImportExport = () => {
       setImportProgress(0);
     }
   };
-  
+
   const handleExport = async () => {
     try {
       setIsExporting(true);
       setError('');
       setSuccess('');
-      
+
       const result = await exportData(
         exportType,
         exportFormat,
         selectedOrganization.id
       );
-      
+
       if (!result.success) {
         setError(result.error);
         return;
       }
-      
+
       setSuccess(`Export completed successfully. ${result.recordCount} records exported.`);
-      
+
       // Refresh export history
       await fetchExportHistory();
     } catch (err) {
@@ -139,32 +132,35 @@ const DataImportExport = () => {
       setIsExporting(false);
     }
   };
-  
+
   const handleBulkDelete = async () => {
     if (!selectedRecords.length) {
       setError('Please select records to delete');
       return;
     }
-    
-    const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedRecords.length} records? This action cannot be undone.`);
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedRecords.length} records? This action cannot be undone.`
+    );
+
     if (!confirmDelete) return;
-    
+
     try {
       setIsDeleting(true);
       setError('');
       setSuccess('');
-      
+
       const result = await bulkDeleteRecords(
         importType,
         selectedRecords,
         selectedOrganization.id
       );
-      
+
       if (!result.success) {
         setError(result.error);
         return;
       }
-      
+
       setSuccess(`${result.deletedCount} records deleted successfully.`);
       setSelectedRecords([]);
     } catch (err) {
@@ -173,22 +169,53 @@ const DataImportExport = () => {
       setIsDeleting(false);
     }
   };
-  
+
+  const handleGenerateSample = async (dataType, format) => {
+    try {
+      setIsGeneratingSample(true);
+      setError('');
+      setSuccess('');
+
+      const result = await generateSampleFile(dataType, format);
+
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+
+      // Create and trigger download
+      const blob = new Blob([result.content], { type: result.mimeType });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setSuccess(`Sample ${format.toUpperCase()} file downloaded successfully.`);
+    } catch (err) {
+      setError('Error generating sample file: ' + err.message);
+    } finally {
+      setIsGeneratingSample(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    
     const date = new Date(dateString);
     return date.toLocaleString();
   };
-  
+
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
-  
+
   if (!selectedOrganization) return null;
-  
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -198,7 +225,7 @@ const DataImportExport = () => {
           <p className="text-gray-600">Import, export, and manage your organization's data</p>
         </div>
       </div>
-      
+
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
@@ -225,6 +252,17 @@ const DataImportExport = () => {
             <span>Export Data</span>
           </button>
           <button
+            onClick={() => setActiveTab('samples')}
+            className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'samples'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <SafeIcon icon={FiIcons.FiDownload} className="w-4 h-4" />
+            <span>Sample Files</span>
+          </button>
+          <button
             onClick={() => setActiveTab('history')}
             className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'history'
@@ -248,13 +286,13 @@ const DataImportExport = () => {
           </button>
         </nav>
       </div>
-      
+
       {/* Tab Content */}
       {activeTab === 'import' && (
         <Card>
           <div className="space-y-6">
             <h2 className="text-lg font-semibold text-gray-900">Import Data</h2>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Data Type
@@ -276,7 +314,7 @@ const DataImportExport = () => {
                 ))}
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Upload File
@@ -300,7 +338,6 @@ const DataImportExport = () => {
                     />
                   </div>
                 </label>
-                
                 <button
                   onClick={handleImport}
                   disabled={!importFile || isImporting}
@@ -310,7 +347,7 @@ const DataImportExport = () => {
                 </button>
               </div>
             </div>
-            
+
             {isImporting && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
@@ -325,19 +362,19 @@ const DataImportExport = () => {
                 </div>
               </div>
             )}
-            
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
-            
+
             {success && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                 <p className="text-sm text-green-700">{success}</p>
               </div>
             )}
-            
+
             <div className="border-t border-gray-200 pt-4">
               <h3 className="text-md font-medium text-gray-900 mb-3">Import Guidelines</h3>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 pl-2">
@@ -352,12 +389,12 @@ const DataImportExport = () => {
           </div>
         </Card>
       )}
-      
+
       {activeTab === 'export' && (
         <Card>
           <div className="space-y-6">
             <h2 className="text-lg font-semibold text-gray-900">Export Data</h2>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Data Type
@@ -379,7 +416,7 @@ const DataImportExport = () => {
                 ))}
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Export Format
@@ -401,7 +438,7 @@ const DataImportExport = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="flex justify-end">
               <button
                 onClick={handleExport}
@@ -412,13 +449,13 @@ const DataImportExport = () => {
                 <span>{isExporting ? 'Exporting...' : 'Export Data'}</span>
               </button>
             </div>
-            
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
-            
+
             {success && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                 <p className="text-sm text-green-700">{success}</p>
@@ -427,7 +464,67 @@ const DataImportExport = () => {
           </div>
         </Card>
       )}
-      
+
+      {activeTab === 'samples' && (
+        <Card>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Sample Files</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Download sample files to understand the required format for each data type
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {dataTypes.map(dataType => (
+                <div key={dataType.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-primary-100 rounded-lg">
+                      <SafeIcon icon={dataType.icon} className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">{dataType.label}</h3>
+                      <p className="text-sm text-gray-500">Sample data files</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {exportFormats.map(format => (
+                      <button
+                        key={format.id}
+                        onClick={() => handleGenerateSample(dataType.id, format.id)}
+                        disabled={isGeneratingSample}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <SafeIcon icon={format.icon} className="w-4 h-4 text-gray-600" />
+                          <span className="text-sm font-medium text-gray-700">
+                            {dataType.label} Sample ({format.label})
+                          </span>
+                        </div>
+                        <SafeIcon icon={FiIcons.FiDownload} className="w-4 h-4 text-gray-400" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-700">{success}</p>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {activeTab === 'history' && (
         <div className="space-y-6">
           <Card title="Import History">
@@ -457,8 +554,8 @@ const DataImportExport = () => {
                             item.status === 'completed'
                               ? 'bg-success-100 text-success-800'
                               : item.status === 'processing'
-                                ? 'bg-warning-100 text-warning-800'
-                                : 'bg-danger-100 text-danger-800'
+                              ? 'bg-warning-100 text-warning-800'
+                              : 'bg-danger-100 text-danger-800'
                           }`}>
                             {item.status}
                           </span>
@@ -476,7 +573,7 @@ const DataImportExport = () => {
               </table>
             </div>
           </Card>
-          
+
           <Card title="Export History">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -503,8 +600,8 @@ const DataImportExport = () => {
                             item.status === 'completed'
                               ? 'bg-success-100 text-success-800'
                               : item.status === 'processing'
-                                ? 'bg-warning-100 text-warning-800'
-                                : 'bg-danger-100 text-danger-800'
+                              ? 'bg-warning-100 text-warning-800'
+                              : 'bg-danger-100 text-danger-800'
                           }`}>
                             {item.status}
                           </span>
@@ -535,12 +632,12 @@ const DataImportExport = () => {
           </Card>
         </div>
       )}
-      
+
       {activeTab === 'bulk' && (
         <Card>
           <div className="space-y-6">
             <h2 className="text-lg font-semibold text-gray-900">Bulk Operations</h2>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Data Type
@@ -565,10 +662,9 @@ const DataImportExport = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="border-t border-gray-200 pt-4">
               <h3 className="text-md font-medium text-gray-900 mb-3">Bulk Delete</h3>
-              
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <div className="flex items-start">
                   <SafeIcon icon={FiIcons.FiAlertTriangle} className="w-5 h-5 text-yellow-600 mr-3 mt-0.5" />
@@ -581,7 +677,7 @@ const DataImportExport = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Record IDs (comma-separated)
@@ -594,7 +690,7 @@ const DataImportExport = () => {
                   placeholder="Enter record IDs to delete, separated by commas"
                 />
               </div>
-              
+
               <div className="flex justify-end">
                 <button
                   onClick={handleBulkDelete}
@@ -606,13 +702,13 @@ const DataImportExport = () => {
                 </button>
               </div>
             </div>
-            
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
-            
+
             {success && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                 <p className="text-sm text-green-700">{success}</p>

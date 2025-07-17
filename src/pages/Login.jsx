@@ -2,20 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
-import { 
-  FiActivity, 
-  FiUsers, 
-  FiCalendar, 
-  FiPackage, 
-  FiDollarSign, 
-  FiFileText, 
-  FiShield, 
-  FiHeart, 
-  FiEye, 
-  FiEyeOff, 
-  FiLogIn, 
-  FiInfo 
-} from 'react-icons/fi'
+import { FiActivity, FiUsers, FiCalendar, FiPackage, FiDollarSign, FiFileText, FiShield, FiHeart, FiEye, FiEyeOff, FiLogIn, FiInfo } from 'react-icons/fi'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -50,11 +37,16 @@ const Login = () => {
     setLoading(true)
 
     try {
+      console.log('Submitting login form...')
       const result = await login({ email, password })
       
+      console.log('Login result:', result)
+      
       if (result.success) {
+        console.log('Login successful, navigating to dashboard...')
         navigate('/dashboard')
       } else {
+        console.error('Login failed:', result.error)
         setError(result.error || 'Login failed')
       }
     } catch (error) {

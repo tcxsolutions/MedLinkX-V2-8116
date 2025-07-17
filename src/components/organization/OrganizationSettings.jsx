@@ -5,9 +5,10 @@ import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useOrganization } from '../../contexts/OrganizationContext';
 import OrganizationLogo from './OrganizationLogo';
+import { toast } from 'react-toastify';
 
 const OrganizationSettings = () => {
-  const { selectedOrganization } = useOrganization();
+  const { selectedOrganization, updateOrganization } = useOrganization();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -28,7 +29,7 @@ const OrganizationSettings = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Initialize form data when organization changes
   useEffect(() => {
     if (selectedOrganization) {
@@ -36,65 +37,112 @@ const OrganizationSettings = () => {
         name: selectedOrganization.name || '',
         description: selectedOrganization.description || '',
         address: {
-          street: selectedOrganization.address?.street || '',
-          city: selectedOrganization.address?.city || '',
-          state: selectedOrganization.address?.state || '',
-          zip: selectedOrganization.address?.zip || '',
-          country: selectedOrganization.address?.country || ''
+          street: selectedOrganization.address_street || '',
+          city: selectedOrganization.address_city || '',
+          state: selectedOrganization.address_state || '',
+          zip: selectedOrganization.address_zip || '',
+          country: selectedOrganization.address_country || ''
         },
         contactInfo: {
-          phone: selectedOrganization.contactInfo?.phone || '',
-          email: selectedOrganization.contactInfo?.email || '',
-          website: selectedOrganization.contactInfo?.website || ''
+          phone: selectedOrganization.phone_main || '',
+          email: selectedOrganization.email_main || '',
+          website: selectedOrganization.website || ''
         }
       });
     }
   }, [selectedOrganization]);
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     if (name.includes('.')) {
       const [section, field] = name.split('.');
-      setFormData({
-        ...formData,
-        [section]: {
-          ...formData[section],
-          [field]: value
-        }
-      });
+      setFormData(prev => ({
+        ...prev,
+        [section]: { ...prev[section], [field]: value }
+      }));
     } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!selectedOrganization) return;
-    
+
     try {
       setIsSubmitting(true);
       setError('');
       setSuccess('');
+
+      // Prepare data for update
+      const updateData = {
+        name: formData.name,
+        description: formData.description,
+        address_street: formData.address.street,
+        address_city: formData.address.city,
+        address_state: formData.address.state,
+        address_zip: formData.address.zip,
+        address_country: formData.address.country,
+        phone_main: formData.contactInfo.phone,
+        email_main: formData.contactInfo.email,
+        website: formData.contactInfo.website
+      };
+
+      const result = await updateOrganization(selectedOrganization.id, updateData);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccess('Organization updated successfully!');
-      setIsEditing(false);
+      if (result.success) {
+        setSuccess('Organization updated successfully!');
+        setIsEditing(false);
+        toast.success('Organization settings saved successfully!');
+      } else {
+        setError(result.error || 'Failed to update organization');
+        toast.error('Failed to save organization settings');
+      }
     } catch (err) {
       setError('Error updating organization: ' + err.message);
+      toast.error('An error occurred while saving');
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  if (!selectedOrganization) return null;
-  
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setError('');
+    setSuccess('');
+    // Reset form data to original values
+    if (selectedOrganization) {
+      setFormData({
+        name: selectedOrganization.name || '',
+        description: selectedOrganization.description || '',
+        address: {
+          street: selectedOrganization.address_street || '',
+          city: selectedOrganization.address_city || '',
+          state: selectedOrganization.address_state || '',
+          zip: selectedOrganization.address_zip || '',
+          country: selectedOrganization.address_country || ''
+        },
+        contactInfo: {
+          phone: selectedOrganization.phone_main || '',
+          email: selectedOrganization.email_main || '',
+          website: selectedOrganization.website || ''
+        }
+      });
+    }
+  };
+
+  if (!selectedOrganization) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <SafeIcon icon={FiIcons.FiBriefcase} className="w-12 h-12 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No Organization Selected</h3>
+        <p className="text-gray-600">Please select an organization to view its settings.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -103,7 +151,6 @@ const OrganizationSettings = () => {
           <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
           <p className="text-gray-600">Manage your organization details and configuration</p>
         </div>
-        
         {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
@@ -114,21 +161,21 @@ const OrganizationSettings = () => {
           </button>
         )}
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Organization Logo */}
         <div className="lg:col-span-1">
           <OrganizationLogo />
         </div>
-        
+
         {/* Organization Details */}
         <div className="lg:col-span-2">
           <Card>
             <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Basic Information */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Details</h3>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -144,17 +191,15 @@ const OrganizationSettings = () => {
                           required
                         />
                       ) : (
-                        <p className="text-gray-900">{selectedOrganization.name}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.name}</p>
                       )}
                     </div>
-                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Organization Type
                       </label>
-                      <p className="text-gray-900 capitalize">{selectedOrganization.type}</p>
+                      <p className="text-gray-900 py-2 capitalize">{selectedOrganization.type}</p>
                     </div>
-                    
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Description
@@ -168,15 +213,15 @@ const OrganizationSettings = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       ) : (
-                        <p className="text-gray-900">{selectedOrganization.description || 'No description provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.description || 'No description provided'}</p>
                       )}
                     </div>
                   </div>
                 </div>
-                
-                <div className="border-t border-gray-200 pt-4">
+
+                {/* Address Section */}
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Address</h3>
-                  
                   {isEditing ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
@@ -191,7 +236,6 @@ const OrganizationSettings = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           City
@@ -204,7 +248,6 @@ const OrganizationSettings = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           State / Province
@@ -217,7 +260,6 @@ const OrganizationSettings = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           ZIP / Postal Code
@@ -230,7 +272,6 @@ const OrganizationSettings = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Country
@@ -250,43 +291,39 @@ const OrganizationSettings = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Street Address
                         </label>
-                        <p className="text-gray-900">{selectedOrganization.address?.street || 'Not provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.address_street || 'Not provided'}</p>
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           City
                         </label>
-                        <p className="text-gray-900">{selectedOrganization.address?.city || 'Not provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.address_city || 'Not provided'}</p>
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           State / Province
                         </label>
-                        <p className="text-gray-900">{selectedOrganization.address?.state || 'Not provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.address_state || 'Not provided'}</p>
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           ZIP / Postal Code
                         </label>
-                        <p className="text-gray-900">{selectedOrganization.address?.zip || 'Not provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.address_zip || 'Not provided'}</p>
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Country
                         </label>
-                        <p className="text-gray-900">{selectedOrganization.address?.country || 'Not provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.address_country || 'Not provided'}</p>
                       </div>
                     </div>
                   )}
                 </div>
-                
-                <div className="border-t border-gray-200 pt-4">
+
+                {/* Contact Information */}
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
-                  
                   {isEditing ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -301,7 +338,6 @@ const OrganizationSettings = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Email
@@ -314,7 +350,6 @@ const OrganizationSettings = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
-                      
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Website
@@ -334,29 +369,27 @@ const OrganizationSettings = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Phone
                         </label>
-                        <p className="text-gray-900">{selectedOrganization.contactInfo?.phone || 'Not provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.phone_main || 'Not provided'}</p>
                       </div>
-                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Email
                         </label>
-                        <p className="text-gray-900">{selectedOrganization.contactInfo?.email || 'Not provided'}</p>
+                        <p className="text-gray-900 py-2">{selectedOrganization.email_main || 'Not provided'}</p>
                       </div>
-                      
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Website
                         </label>
-                        <p className="text-gray-900">
-                          {selectedOrganization.contactInfo?.website ? (
-                            <a 
-                              href={selectedOrganization.contactInfo.website} 
-                              target="_blank" 
+                        <p className="text-gray-900 py-2">
+                          {selectedOrganization.website ? (
+                            <a
+                              href={selectedOrganization.website}
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="text-primary-600 hover:text-primary-800"
                             >
-                              {selectedOrganization.contactInfo.website}
+                              {selectedOrganization.website}
                             </a>
                           ) : (
                             'Not provided'
@@ -366,24 +399,26 @@ const OrganizationSettings = () => {
                     </div>
                   )}
                 </div>
-                
+
+                {/* Error and Success Messages */}
                 {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <p className="text-sm text-red-700">{error}</p>
                   </div>
                 )}
-                
+
                 {success && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="text-sm text-green-700">{success}</p>
                   </div>
                 )}
-                
+
+                {/* Action Buttons */}
                 {isEditing && (
-                  <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+                  <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
                     <button
                       type="button"
-                      onClick={() => setIsEditing(false)}
+                      onClick={handleCancel}
                       className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                       disabled={isSubmitting}
                     >
@@ -391,10 +426,20 @@ const OrganizationSettings = () => {
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <SafeIcon icon={FiIcons.FiSave} className="w-4 h-4" />
+                          <span>Save Changes</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}

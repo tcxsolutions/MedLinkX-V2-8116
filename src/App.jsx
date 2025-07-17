@@ -1,106 +1,201 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { TenantProvider } from './contexts/TenantContext'
-import { OrganizationProvider } from './contexts/OrganizationContext'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Patients from './pages/Patients'
-import PatientDetails from './pages/PatientDetails'
-import Appointments from './pages/Appointments'
-import Billing from './pages/Billing'
-import Inventory from './pages/Inventory'
-import Pharmacy from './pages/Pharmacy'
-import Reports from './pages/Reports'
-import UserManagement from './pages/UserManagement'
-import DataImportExport from './components/dataManagement/DataImportExport'
-import OrganizationSettings from './components/organization/OrganizationSettings'
-import Header from './components/layout/Header'
-import Sidebar from './components/layout/Sidebar'
-import { useState } from 'react'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { TenantProvider } from './contexts/TenantContext';
+import { OrganizationProvider } from './contexts/OrganizationContext';
+import { PracticeProvider } from './contexts/PracticeContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useState, useEffect } from 'react';
 
-const AppLayout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Patients from './pages/Patients';
+import PatientDetails from './pages/PatientDetails';
+import Appointments from './pages/Appointments';
+import Billing from './pages/Billing';
+import Inventory from './pages/Inventory';
+import Pharmacy from './pages/Pharmacy';
+import Reports from './pages/Reports';
+import UserManagement from './pages/UserManagement';
+import OrganizationManagement from './pages/OrganizationManagement';
+import DataImportExport from './components/dataManagement/DataImportExport';
+import AppLayout from './components/layout/AppLayout';
+import DatabaseInitializer from './components/common/DatabaseInitializer';
+import { checkDatabaseStatus } from './utils/databaseSetup';
+import './App.css';
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Desktop Sidebar - Always visible */}
-      <div className="hidden lg:block">
-        <Sidebar isOpen={true} onClose={() => {}} />
-      </div>
-      
-      {/* Mobile Sidebar - Overlay */}
-      <div className="lg:hidden">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      </div>
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-          {children}
-        </main>
-      </div>
-    </div>
-  )
-}
-
+// Protected route component
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth()
+  const { user, loading } = useAuth();
+  const [dbStatus, setDbStatus] = useState({ checking: true, initialized: false });
 
-  if (loading) {
+  useEffect(() => {
+    if (user && !loading) {
+      checkDatabase();
+    }
+  }, [user, loading]);
+
+  const checkDatabase = async () => {
+    try {
+      const status = await checkDatabaseStatus();
+      setDbStatus({
+        checking: false,
+        initialized: status.initialized && status.hasData,
+        error: status.error
+      });
+    } catch (error) {
+      setDbStatus({
+        checking: false,
+        initialized: false,
+        error: error.message
+      });
+    }
+  };
+
+  if (loading || dbStatus.checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/" replace />;
+  }
+
+  // Show database initializer if database is not ready
+  if (!dbStatus.initialized) {
+    return (
+      <DatabaseInitializer 
+        onComplete={() => setDbStatus(prev => ({ ...prev, initialized: true }))} 
+      />
+    );
   }
 
   return (
     <TenantProvider>
       <OrganizationProvider>
-        <AppLayout>{children}</AppLayout>
+        <PracticeProvider>
+          <AppLayout>{children}</AppLayout>
+        </PracticeProvider>
       </OrganizationProvider>
     </TenantProvider>
-  )
-}
+  );
+};
 
 function App() {
   return (
     <AuthProvider>
+      <ToastContainer position="top-right" autoClose={5000} />
       <Routes>
         <Route path="/" element={<LoginRoute />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-        <Route path="/patients/:id" element={<ProtectedRoute><PatientDetails /></ProtectedRoute>} />
-        <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
-        <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
-        <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-        <Route path="/pharmacy" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-        <Route path="/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-        <Route path="/data-management" element={<ProtectedRoute><DataImportExport /></ProtectedRoute>} />
-        <Route path="/organization" element={<ProtectedRoute><OrganizationSettings /></ProtectedRoute>} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/patients" 
+          element={
+            <ProtectedRoute>
+              <Patients />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/patients/:id" 
+          element={
+            <ProtectedRoute>
+              <PatientDetails />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/appointments" 
+          element={
+            <ProtectedRoute>
+              <Appointments />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/billing" 
+          element={
+            <ProtectedRoute>
+              <Billing />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/inventory" 
+          element={
+            <ProtectedRoute>
+              <Inventory />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/pharmacy" 
+          element={
+            <ProtectedRoute>
+              <Pharmacy />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/reports" 
+          element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/users" 
+          element={
+            <ProtectedRoute>
+              <UserManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/data-management" 
+          element={
+            <ProtectedRoute>
+              <DataImportExport />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/organizations/*" 
+          element={
+            <ProtectedRoute>
+              <OrganizationManagement />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </AuthProvider>
-  )
+  );
 }
 
+// Login route component
 const LoginRoute = () => {
-  const { user, loading } = useAuth()
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
-    )
+    );
   }
 
-  return user ? <Navigate to="/dashboard" replace /> : <Login />
-}
+  return user ? <Navigate to="/dashboard" replace /> : <Login />;
+};
 
-export default App
+export default App;

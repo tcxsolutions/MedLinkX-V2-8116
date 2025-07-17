@@ -2,33 +2,22 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useOrganization } from '../../contexts/OrganizationContext';
 import { useAuth } from '../../contexts/AuthContext';
-
-const {
-  FiMenu,
-  FiBell,
-  FiUser,
-  FiLogOut,
-  FiChevronDown,
-  FiSearch,
-  FiSettings,
-  FiHelpCircle,
-  FiSun,
-  FiMoon,
-  FiGlobe,
-  FiActivity
-} = FiIcons;
+import { useNavigate } from 'react-router-dom';
 
 const Header = ({ onMenuClick }) => {
+  const { selectedOrganization } = useOrganization();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const notifications = [
     { id: 1, type: 'appointment', message: 'New appointment scheduled', time: '2 min ago', unread: true },
-    { id: 2, type: 'alert', message: 'Low inventory alert: Surgical gloves', time: '5 min ago', unread: true },
+    { id: 2, type: 'alert', message: 'Prescription refill request', time: '5 min ago', unread: true },
     { id: 3, type: 'patient', message: 'Patient John Doe checked in', time: '10 min ago', unread: false },
-    { id: 4, type: 'system', message: 'System backup completed', time: '1 hour ago', unread: false }
+    { id: 4, type: 'lab', message: 'Lab results ready for review', time: '1 hour ago', unread: false }
   ];
 
   const unreadCount = notifications.filter(n => n.unread).length;
@@ -36,6 +25,16 @@ const Header = ({ onMenuClick }) => {
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
+    navigate('/');
+  };
+
+  const getHeaderColor = () => {
+    switch (selectedOrganization?.type) {
+      case 'individual': return 'from-blue-600 to-blue-800';
+      case 'family_practice': return 'from-green-600 to-green-800';
+      case 'hospital': return 'from-purple-600 to-purple-800';
+      default: return 'from-blue-600 to-purple-600';
+    }
   };
 
   const getGreeting = () => {
@@ -46,55 +45,54 @@ const Header = ({ onMenuClick }) => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4 relative z-30">
+    <header className={`bg-gradient-to-r ${getHeaderColor()} text-white shadow-md px-6 py-4 relative z-30`}>
       <div className="flex items-center justify-between">
         {/* Left side */}
         <div className="flex items-center space-x-4">
           <button
             onClick={onMenuClick}
-            className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-xl hover:bg-white/10 transition-colors"
           >
-            <SafeIcon icon={FiMenu} className="w-5 h-5 text-gray-600" />
+            <SafeIcon icon={FiIcons.FiMenu} className="w-5 h-5 text-white" />
           </button>
-          <div className="hidden lg:block">
-            <h2 className="text-xl font-bold text-gray-900">
-              {getGreeting()}, {user?.name?.split(' ')[0]}! 👋
+          
+          <div>
+            <h2 className="text-xl font-bold text-white">
+              {getGreeting()}, {user?.name?.split(' ')[0] || 'Admin'}!
             </h2>
-            <p className="text-sm text-gray-500">
-              {new Date().toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
+            <p className="text-sm text-white/80">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
               })}
             </p>
           </div>
         </div>
 
-        {/* Center - Search */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <SafeIcon
-              icon={FiSearch}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-            />
-            <input
-              type="text"
-              placeholder="Search patients, appointments..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
+        {/* Practice name - center */}
+        <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2">
+          <h1 className="text-xl font-bold text-white">
+            {selectedOrganization?.name || 'MedLink EHR'}
+          </h1>
+          <p className="text-sm text-white/80 text-center">
+            {selectedOrganization?.type === 'individual' && 'Individual Practice'}
+            {selectedOrganization?.type === 'family_practice' && 'Family Practice Clinic'}
+            {selectedOrganization?.type === 'hospital' && 'Hospital System'}
+            {!selectedOrganization?.type && 'Healthcare Platform'}
+          </p>
         </div>
 
         {/* Right side */}
         <div className="flex items-center space-x-3">
           {/* Quick Actions */}
           <div className="hidden md:flex items-center space-x-2">
-            <button className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
-              <SafeIcon icon={FiSun} className="w-5 h-5 text-gray-600" />
+            <button className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+              <SafeIcon icon={FiIcons.FiSearch} className="w-5 h-5 text-white" />
             </button>
-            <button className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
-              <SafeIcon icon={FiHelpCircle} className="w-5 h-5 text-gray-600" />
+            <button className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+              <SafeIcon icon={FiIcons.FiHelpCircle} className="w-5 h-5 text-white" />
             </button>
           </div>
 
@@ -102,9 +100,9 @@ const Header = ({ onMenuClick }) => {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 rounded-xl hover:bg-gray-100 transition-colors relative"
+              className="p-2 rounded-xl hover:bg-white/10 transition-colors relative"
             >
-              <SafeIcon icon={FiBell} className="w-5 h-5 text-gray-600" />
+              <SafeIcon icon={FiIcons.FiBell} className="w-5 h-5 text-white" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
                   {unreadCount}
@@ -127,7 +125,6 @@ const Header = ({ onMenuClick }) => {
                       <span className="text-xs text-gray-500">{unreadCount} unread</span>
                     </div>
                   </div>
-
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.map((notification) => (
                       <div
@@ -137,11 +134,9 @@ const Header = ({ onMenuClick }) => {
                         }`}
                       >
                         <div className="flex items-start space-x-3">
-                          <div
-                            className={`w-2 h-2 rounded-full mt-2 ${
-                              notification.unread ? 'bg-blue-500' : 'bg-gray-300'
-                            }`}
-                          />
+                          <div className={`w-2 h-2 rounded-full mt-2 ${
+                            notification.unread ? 'bg-blue-500' : 'bg-gray-300'
+                          }`} />
                           <div className="flex-1">
                             <p className="text-sm text-gray-900">{notification.message}</p>
                             <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
@@ -150,7 +145,6 @@ const Header = ({ onMenuClick }) => {
                       </div>
                     ))}
                   </div>
-
                   <div className="px-4 py-3 border-t border-gray-200">
                     <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                       View all notifications
@@ -165,16 +159,16 @@ const Header = ({ onMenuClick }) => {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-100 transition-colors"
+              className="flex items-center space-x-3 p-2 rounded-xl hover:bg-white/10 transition-colors"
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                <SafeIcon icon={FiUser} className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <SafeIcon icon={FiIcons.FiUser} className="w-5 h-5 text-white" />
               </div>
               <div className="text-left hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                <p className="text-sm font-medium text-white">{user?.name || 'Admin User'}</p>
+                <p className="text-xs text-white/80 capitalize">{user?.role || 'Administrator'}</p>
               </div>
-              <SafeIcon icon={FiChevronDown} className="w-4 h-4 text-gray-500" />
+              <SafeIcon icon={FiIcons.FiChevronDown} className="w-4 h-4 text-white/80" />
             </button>
 
             {/* User Dropdown */}
@@ -190,13 +184,13 @@ const Header = ({ onMenuClick }) => {
                   <div className="px-4 py-3 border-b border-gray-200">
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                        <SafeIcon icon={FiUser} className="w-6 h-6 text-white" />
+                        <SafeIcon icon={FiIcons.FiUser} className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{user?.name}</p>
-                        <p className="text-sm text-gray-500">{user?.email}</p>
+                        <p className="font-medium text-gray-900">{user?.name || 'Admin User'}</p>
+                        <p className="text-sm text-gray-500">{user?.email || 'admin@medlinkx.com'}</p>
                         <p className="text-xs text-gray-400 capitalize">
-                          {user?.role} • {user?.department}
+                          {user?.role || 'Administrator'} • Full Access
                         </p>
                       </div>
                     </div>
@@ -205,19 +199,25 @@ const Header = ({ onMenuClick }) => {
                   {/* Menu Items */}
                   <div className="py-2">
                     <button className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <SafeIcon icon={FiUser} className="w-4 h-4" />
+                      <SafeIcon icon={FiIcons.FiUser} className="w-4 h-4" />
                       <span>Profile Settings</span>
                     </button>
-                    <button className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <SafeIcon icon={FiSettings} className="w-4 h-4" />
-                      <span>Preferences</span>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        navigate('/organizations');
+                      }}
+                      className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <SafeIcon icon={FiIcons.FiSettings} className="w-4 h-4" />
+                      <span>Organization Settings</span>
                     </button>
                     <button className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <SafeIcon icon={FiActivity} className="w-4 h-4" />
+                      <SafeIcon icon={FiIcons.FiActivity} className="w-4 h-4" />
                       <span>Activity Log</span>
                     </button>
                     <button className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <SafeIcon icon={FiHelpCircle} className="w-4 h-4" />
+                      <SafeIcon icon={FiIcons.FiHelpCircle} className="w-4 h-4" />
                       <span>Help & Support</span>
                     </button>
                   </div>
@@ -228,7 +228,7 @@ const Header = ({ onMenuClick }) => {
                       onClick={handleLogout}
                       className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
-                      <SafeIcon icon={FiLogOut} className="w-4 h-4" />
+                      <SafeIcon icon={FiIcons.FiLogOut} className="w-4 h-4" />
                       <span>Sign Out</span>
                     </button>
                   </div>
