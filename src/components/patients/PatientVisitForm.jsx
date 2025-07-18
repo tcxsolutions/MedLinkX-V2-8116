@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { usePractice } from '../../contexts/PracticeContext';
 import { createVisit } from '../../services/visitService';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import DiagnosticCodeSelector from '../visits/DiagnosticCodeSelector';
+import VisitDiagnosisList from '../visits/VisitDiagnosisList';
+import VoiceToTextInput from '../visits/VoiceToTextInput';
 
 const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
   const { practiceSettings, features } = usePractice();
@@ -14,21 +17,30 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
   const [visitDate, setVisitDate] = useState(new Date());
   const [providers, setProviders] = useState([]);
   const [departments, setDepartments] = useState([]);
-  
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm({
+  const [selectedDiagnoses, setSelectedDiagnoses] = useState([]);
+  const [notesContent, setNotesContent] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue
+  } = useForm({
     defaultValues: {
       patient_id: patientId,
       visit_type: 'Check-up',
       chief_complaint: '',
-      visit_status: 'Scheduled'
+      provider_id: '',
+      department: '',
+      status: 'Scheduled'
     }
   });
-  
+
   // Set visit date in form when it changes
   useEffect(() => {
     setValue('visit_date', visitDate.toISOString());
   }, [visitDate, setValue]);
-  
+
   // Mock providers and departments
   useEffect(() => {
     // In a real app, these would come from an API call
@@ -37,7 +49,7 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
       { id: '2', name: 'Dr. Sarah Johnson', department: 'Pediatrics' },
       { id: '3', name: 'Dr. Michael Brown', department: 'Cardiology' },
     ]);
-    
+
     setDepartments([
       { id: '1', name: 'Primary Care' },
       { id: '2', name: 'Pediatrics' },
@@ -47,7 +59,7 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
       { id: '6', name: 'Radiology' }
     ]);
   }, []);
-  
+
   const visitTypes = [
     'Check-up',
     'Follow-up',
@@ -58,21 +70,54 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
     'Vaccination',
     'Urgent Care'
   ];
-  
+
+  const handleAddDiagnosis = (code) => {
+    // Check if already added
+    if (selectedDiagnoses.some(d => d.id === code.id)) {
+      return;
+    }
+    
+    // Add the diagnosis
+    const newDiagnosis = {
+      id: `temp-${Date.now()}`,
+      diagnostic_code_id: code.id,
+      diagnostic_code: code,
+      primary: selectedDiagnoses.length === 0, // First one is primary
+      notes: '',
+      created_at: new Date().toISOString(),
+      created_by: 'Current User'
+    };
+    
+    setSelectedDiagnoses([...selectedDiagnoses, newDiagnosis]);
+  };
+
+  const handleRemoveDiagnosis = (diagnosisId) => {
+    setSelectedDiagnoses(selectedDiagnoses.filter(d => d.id !== diagnosisId));
+  };
+
+  const handleNotesChange = (e) => {
+    setNotesContent(e.target.value);
+  };
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
+
     // Ensure visit_date is in ISO format
     const visitData = {
       ...data,
       patient_id: patientId,
-      visit_date: visitDate.toISOString()
+      visit_date: visitDate.toISOString(),
+      diagnoses: selectedDiagnoses.map(d => ({
+        diagnostic_code_id: d.diagnostic_code_id,
+        primary: d.primary,
+        notes: d.notes
+      })),
+      clinical_notes: notesContent
     };
-    
+
     const result = await createVisit(visitData);
-    
     setIsSubmitting(false);
-    
+
     if (result.success) {
       onSuccess(result.data);
     }
@@ -109,7 +154,6 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
               <p className="mt-1 text-sm text-red-600">{errors.visit_date.message}</p>
             )}
           </div>
-          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Visit Type *
@@ -128,7 +172,6 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
               <p className="mt-1 text-sm text-red-600">{errors.visit_type.message}</p>
             )}
           </div>
-          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Provider
@@ -145,7 +188,6 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
               ))}
             </select>
           </div>
-          
           {features.departmentManagement && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -165,7 +207,7 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
             </div>
           )}
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Chief Complaint *
@@ -180,7 +222,42 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
             <p className="mt-1 text-sm text-red-600">{errors.chief_complaint.message}</p>
           )}
         </div>
-        
+
+        {/* Diagnostic Codes Section */}
+        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900">Diagnostic Codes</h3>
+          <p className="text-sm text-gray-600">
+            Add diagnostic codes to associate with this visit
+          </p>
+          
+          <DiagnosticCodeSelector 
+            onSelect={handleAddDiagnosis} 
+            selectedCodes={selectedDiagnoses.map(d => d.diagnostic_code)}
+          />
+          
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Diagnoses</h4>
+            <VisitDiagnosisList 
+              diagnoses={selectedDiagnoses}
+              onRemove={handleRemoveDiagnosis}
+            />
+          </div>
+        </div>
+
+        {/* Clinical Notes with Voice-to-Text */}
+        <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900">Clinical Notes</h3>
+          <p className="text-sm text-gray-600">
+            Add clinical notes using voice-to-text or typing
+          </p>
+          
+          <VoiceToTextInput
+            value={notesContent}
+            onChange={handleNotesChange}
+            rows={6}
+          />
+        </div>
+
         {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
           <button
@@ -190,7 +267,6 @@ const PatientVisitForm = ({ patientId, patientName, onSuccess, onCancel }) => {
           >
             Cancel
           </button>
-          
           <button
             type="submit"
             disabled={isSubmitting}

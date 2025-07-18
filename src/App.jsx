@@ -6,7 +6,6 @@ import { PracticeProvider } from './contexts/PracticeContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useState, useEffect } from 'react';
-
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
@@ -21,7 +20,7 @@ import OrganizationManagement from './pages/OrganizationManagement';
 import DataImportExport from './components/dataManagement/DataImportExport';
 import AppLayout from './components/layout/AppLayout';
 import DatabaseInitializer from './components/common/DatabaseInitializer';
-import { checkDatabaseStatus } from './utils/databaseSetup';
+import { supabase } from './lib/supabase';
 import './App.css';
 
 // Protected route component
@@ -37,18 +36,25 @@ const ProtectedRoute = ({ children }) => {
 
   const checkDatabase = async () => {
     try {
-      const status = await checkDatabaseStatus();
-      setDbStatus({
-        checking: false,
-        initialized: status.initialized && status.hasData,
-        error: status.error
-      });
+      // Check if patients table exists and has data
+      const { data, error } = await supabase
+        .from('patients_medlink_x7a9b2c3')
+        .select('id')
+        .limit(1);
+      
+      if (error) {
+        console.error('Database check error:', error);
+        setDbStatus({ checking: false, initialized: false, error: error.message });
+      } else {
+        setDbStatus({ 
+          checking: false, 
+          initialized: true, 
+          hasData: data && data.length > 0 
+        });
+      }
     } catch (error) {
-      setDbStatus({
-        checking: false,
-        initialized: false,
-        error: error.message
-      });
+      console.error('Error checking database:', error);
+      setDbStatus({ checking: false, initialized: false, error: error.message });
     }
   };
 
@@ -68,7 +74,7 @@ const ProtectedRoute = ({ children }) => {
   if (!dbStatus.initialized) {
     return (
       <DatabaseInitializer 
-        onComplete={() => setDbStatus(prev => ({ ...prev, initialized: true }))} 
+        onComplete={() => setDbStatus(prev => ({ ...prev, initialized: true }))}
       />
     );
   }
@@ -90,94 +96,39 @@ function App() {
       <ToastContainer position="top-right" autoClose={5000} />
       <Routes>
         <Route path="/" element={<LoginRoute />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/patients" 
-          element={
-            <ProtectedRoute>
-              <Patients />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/patients/:id" 
-          element={
-            <ProtectedRoute>
-              <PatientDetails />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/appointments" 
-          element={
-            <ProtectedRoute>
-              <Appointments />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/billing" 
-          element={
-            <ProtectedRoute>
-              <Billing />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/inventory" 
-          element={
-            <ProtectedRoute>
-              <Inventory />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/pharmacy" 
-          element={
-            <ProtectedRoute>
-              <Pharmacy />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/reports" 
-          element={
-            <ProtectedRoute>
-              <Reports />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/users" 
-          element={
-            <ProtectedRoute>
-              <UserManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/data-management" 
-          element={
-            <ProtectedRoute>
-              <DataImportExport />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/organizations/*" 
-          element={
-            <ProtectedRoute>
-              <OrganizationManagement />
-            </ProtectedRoute>
-          } 
-        />
+        <Route path="/dashboard" element={<ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>} />
+        <Route path="/patients" element={<ProtectedRoute>
+          <Patients />
+        </ProtectedRoute>} />
+        <Route path="/patients/:id" element={<ProtectedRoute>
+          <PatientDetails />
+        </ProtectedRoute>} />
+        <Route path="/appointments" element={<ProtectedRoute>
+          <Appointments />
+        </ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute>
+          <Billing />
+        </ProtectedRoute>} />
+        <Route path="/inventory" element={<ProtectedRoute>
+          <Inventory />
+        </ProtectedRoute>} />
+        <Route path="/pharmacy" element={<ProtectedRoute>
+          <Pharmacy />
+        </ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute>
+          <Reports />
+        </ProtectedRoute>} />
+        <Route path="/users" element={<ProtectedRoute>
+          <UserManagement />
+        </ProtectedRoute>} />
+        <Route path="/data-management" element={<ProtectedRoute>
+          <DataImportExport />
+        </ProtectedRoute>} />
+        <Route path="/organizations/*" element={<ProtectedRoute>
+          <OrganizationManagement />
+        </ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   );

@@ -10,33 +10,36 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
   const { practiceSettings, features } = usePractice();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  
-  const { register, handleSubmit, formState: { errors }, getValues } = useForm();
-  
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    getValues
+  } = useForm();
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
     const patientData = {
       ...data,
       practice_id: practiceSettings.id,
       allergies: data.allergies ? data.allergies.split(',').map(a => a.trim()) : []
     };
-    
+
     const result = await createPatient(patientData);
-    
     setIsSubmitting(false);
-    
+
     if (result.success) {
       onSuccess(result.data);
     }
   };
-  
+
   const totalSteps = features.familyManagement ? 3 : 2;
-  
+
   const nextStep = () => {
     setCurrentStep(Math.min(currentStep + 1, totalSteps));
   };
-  
+
   const prevStep = () => {
     setCurrentStep(Math.max(currentStep - 1, 1));
   };
@@ -49,19 +52,19 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
           {Array.from({ length: totalSteps }).map((_, index) => (
             <React.Fragment key={index}>
               {index > 0 && (
-                <div 
+                <div
                   className={`flex-1 h-1 mx-2 ${
                     currentStep > index + 1 ? 'bg-blue-500' : 'bg-gray-300'
                   }`}
                 ></div>
               )}
-              <div 
+              <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm ${
                   currentStep > index + 1
                     ? 'bg-blue-500 text-white'
                     : currentStep === index + 1
-                      ? 'bg-blue-100 text-blue-600 ring-2 ring-blue-500'
-                      : 'bg-gray-200 text-gray-600'
+                    ? 'bg-blue-100 text-blue-600 ring-2 ring-blue-500'
+                    : 'bg-gray-200 text-gray-600'
                 }`}
               >
                 {index + 1}
@@ -88,8 +91,7 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
             className="space-y-6"
           >
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Information</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   First Name *
@@ -103,7 +105,16 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                   <p className="mt-1 text-sm text-red-600">{errors.first_name.message}</p>
                 )}
               </div>
-              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Middle Name
+                </label>
+                <input
+                  type="text"
+                  {...register('middle_name')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Last Name *
@@ -117,7 +128,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                   <p className="mt-1 text-sm text-red-600">{errors.last_name.message}</p>
                 )}
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Date of Birth *
@@ -131,7 +141,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                   <p className="mt-1 text-sm text-red-600">{errors.date_of_birth.message}</p>
                 )}
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Gender *
@@ -150,7 +159,8 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                   <p className="mt-1 text-sm text-red-600">{errors.gender.message}</p>
                 )}
               </div>
-              
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone
@@ -161,7 +171,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email
@@ -173,7 +182,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                 />
               </div>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Address
@@ -186,7 +194,7 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
             </div>
           </motion.div>
         )}
-        
+
         {/* Step 2: Medical Information */}
         {currentStep === 2 && (
           <motion.div
@@ -196,7 +204,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
             className="space-y-6"
           >
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Medical Information</h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -217,7 +224,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                   <option value="O-">O-</option>
                 </select>
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Allergies (comma separated)
@@ -230,7 +236,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                 />
               </div>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Insurance Provider
@@ -241,7 +246,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Insurance Policy Number
@@ -252,7 +256,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -264,7 +267,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Emergency Contact Phone
@@ -278,7 +280,7 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
             </div>
           </motion.div>
         )}
-        
+
         {/* Step 3: Family Information (only for family practice) */}
         {currentStep === 3 && features.familyManagement && (
           <motion.div
@@ -288,7 +290,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
             className="space-y-6"
           >
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Family Information</h2>
-            
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
               <div className="flex items-start">
                 <SafeIcon icon={FiIcons.FiInfo} className="w-5 h-5 text-blue-500 mr-3 mt-0.5" />
@@ -299,7 +300,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
                 </div>
               </div>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Family Notes (optional)
@@ -313,7 +313,7 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
             </div>
           </motion.div>
         )}
-        
+
         {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
           <button
@@ -323,7 +323,6 @@ const PatientRegistrationForm = ({ onSuccess, onCancel }) => {
           >
             {currentStep === 1 ? 'Cancel' : 'Back'}
           </button>
-          
           <button
             type={currentStep === totalSteps ? 'submit' : 'button'}
             onClick={currentStep === totalSteps ? undefined : nextStep}
